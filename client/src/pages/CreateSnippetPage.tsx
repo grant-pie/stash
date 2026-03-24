@@ -1,0 +1,179 @@
+import { useState, type FormEvent } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import api from '@/lib/axios';
+import type { CreateSnippetPayload } from '@/types';
+
+const LANGUAGES = [
+  'typescript', 'javascript', 'python', 'rust', 'go',
+  'css', 'html', 'sql', 'bash', 'other',
+];
+
+export default function CreateSnippetPage() {
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState<CreateSnippetPayload>({
+    title: '',
+    description: '',
+    language: 'typescript',
+    content: '',
+    tags: [],
+  });
+  const [tagInput, setTagInput] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  function set(field: keyof CreateSnippetPayload, value: unknown) {
+    setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function addTag() {
+    const tag = tagInput.trim().toLowerCase();
+    if (tag && !form.tags?.includes(tag)) {
+      set('tags', [...(form.tags ?? []), tag]);
+    }
+    setTagInput('');
+  }
+
+  function removeTag(tag: string) {
+    set('tags', (form.tags ?? []).filter((t) => t !== tag));
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const { data } = await api.post('/snippets', form);
+      navigate(`/snippets/${data.id}`);
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? 'Failed to create snippet');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen">
+      <header className="border-b border-gray-800 bg-surface-1">
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+          <Link to="/" className="text-lg font-bold tracking-tight text-indigo-400">
+            Stash
+          </Link>
+          <Link to="/" className="btn-ghost text-xs">
+            Cancel
+          </Link>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-3xl px-4 py-8">
+        <h1 className="mb-6 text-xl font-bold">New snippet</h1>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && (
+            <p className="rounded bg-red-950 px-3 py-2 text-sm text-red-400">{error}</p>
+          )}
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-1 sm:col-span-2">
+              <label className="block text-xs text-gray-400">Title *</label>
+              <input
+                type="text"
+                className="input"
+                value={form.title}
+                onChange={(e) => set('title', e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="block text-xs text-gray-400">Description</label>
+              <textarea
+                className="input resize-none"
+                rows={2}
+                value={form.description}
+                onChange={(e) => set('description', e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs text-gray-400">Language *</label>
+              <select
+                className="input"
+                value={form.language}
+                onChange={(e) => set('language', e.target.value)}
+              >
+                {LANGUAGES.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs text-gray-400">Tags</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="input flex-1"
+                  placeholder="Add tag…"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addTag();
+                    }
+                  }}
+                />
+                <button type="button" onClick={addTag} className="btn-ghost shrink-0">
+                  Add
+                </button>
+              </div>
+              {(form.tags ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {form.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      className="flex items-center gap-1 rounded-full bg-indigo-950 px-2 py-0.5 text-xs text-indigo-300"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="text-indigo-400 hover:text-white"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-xs text-gray-400">Code *</label>
+            <textarea
+              className="input font-mono resize-y"
+              rows={16}
+              value={form.content}
+              onChange={(e) => set('content', e.target.value)}
+              required
+              spellCheck={false}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Link to="/" className="btn-ghost">
+              Cancel
+            </Link>
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? 'Saving…' : 'Save snippet'}
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+  );
+}
