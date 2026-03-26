@@ -18,6 +18,10 @@ export class UsersService {
       .getOne();
   }
 
+  async findByUsername(username: string): Promise<User | null> {
+    return this.usersRepo.findOneBy({ username });
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepo
       .createQueryBuilder('user')

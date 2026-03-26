@@ -1,27 +1,50 @@
-import { useState, type FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import api from '@/lib/axios';
 import type { CreateSnippetPayload } from '@/types';
+import Navbar from '@/components/Navbar';
 
 const LANGUAGES = [
   'typescript', 'javascript', 'python', 'rust', 'go',
   'css', 'html', 'sql', 'bash', 'other',
 ];
 
+const EMPTY_FORM: CreateSnippetPayload = {
+  title: '',
+  description: '',
+  language: 'typescript',
+  content: '',
+  tags: [],
+  isPublic: false,
+};
+
 export default function CreateSnippetPage() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
 
-  const [form, setForm] = useState<CreateSnippetPayload>({
-    title: '',
-    description: '',
-    language: 'typescript',
-    content: '',
-    tags: [],
-    isPublic: false,
-  });
+  const [form, setForm] = useState<CreateSnippetPayload>(EMPTY_FORM);
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(isEditing);
+
+  useEffect(() => {
+    if (!id) return;
+    api.get(`/snippets/${id}`)
+      .then(({ data }) => {
+        setForm({
+          title: data.title,
+          description: data.description ?? '',
+          language: data.language,
+          content: data.content,
+          tags: data.tags ?? [],
+          isPublic: data.isPublic,
+        });
+      })
+      .catch(() => setError('Failed to load snippet.'))
+      .finally(() => setFetching(false));
+  }, [id]);
 
   function set(field: keyof CreateSnippetPayload, value: unknown) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -39,35 +62,37 @@ export default function CreateSnippetPage() {
     set('tags', (form.tags ?? []).filter((t) => t !== tag));
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const { data } = await api.post('/snippets', form);
-      navigate(`/snippets/${data.id}`);
+      if (isEditing) {
+        await api.patch(`/snippets/${id}`, form);
+        navigate(`/snippets/${id}`);
+      } else {
+        const { data } = await api.post('/snippets', form);
+        navigate(`/snippets/${data.id}`);
+      }
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Failed to create snippet');
+      setError(err?.response?.data?.message ?? `Failed to ${isEditing ? 'update' : 'create'} snippet`);
     } finally {
       setLoading(false);
     }
   }
 
+  if (fetching) {
+    return <p className="p-8 text-sm text-gray-500">Loading…</p>;
+  }
+
   return (
     <div className="min-h-screen">
-      <header className="border-b border-gray-800 bg-surface-1">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <Link to="/" className="text-lg font-bold tracking-tight text-indigo-400">
-            Stash
-          </Link>
-          <Link to="/" className="btn-ghost text-xs">
-            Cancel
-          </Link>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="mx-auto max-w-3xl px-4 py-8">
-        <h1 className="mb-6 text-xl font-bold">New snippet</h1>
+        <h1 className="mb-6 text-xl font-bold">
+          {isEditing ? 'Edit snippet' : 'New snippet'}
+        </h1>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
@@ -165,7 +190,6 @@ export default function CreateSnippetPage() {
             />
           </div>
 
-          {/* Visibility toggle */}
           <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-surface-2 px-4 py-3">
             <div>
               <p className="text-sm font-medium text-gray-200">
@@ -195,11 +219,11 @@ export default function CreateSnippetPage() {
           </div>
 
           <div className="flex justify-end gap-3">
-            <Link to="/" className="btn-ghost">
+            <Link to={isEditing ? `/snippets/${id}` : '/my-snippets'} className="btn-ghost">
               Cancel
             </Link>
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? 'Saving…' : 'Save snippet'}
+              {loading ? 'Saving…' : isEditing ? 'Save changes' : 'Save snippet'}
             </button>
           </div>
         </form>

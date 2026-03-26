@@ -26,6 +26,14 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    const existingUsername = await this.usersService.findByUsername(dto.username);
+    if (existingUsername) {
+      throw new ConflictException({
+        message: 'This username is already taken.',
+        errorCode: 'USERNAME_TAKEN',
+      });
+    }
+
     const existing = await this.usersService.findByEmail(dto.email);
 
     if (existing) {
