@@ -18,10 +18,28 @@ import { CreateSnippetDto } from './dto/create-snippet.dto';
 import { UpdateSnippetDto } from './dto/update-snippet.dto';
 
 @Controller('snippets')
-@UseGuards(JwtAuthGuard)
 export class SnippetsController {
   constructor(private readonly snippetsService: SnippetsService) {}
 
+  // ── Public endpoints (no auth required) ────────────────────────────────
+
+  @Get('public')
+  findPublic(
+    @Query('search') search?: string,
+    @Query('language') language?: string,
+    @Query('tag') tag?: string,
+  ) {
+    return this.snippetsService.findPublic(search, language, tag);
+  }
+
+  @Get('public/:id')
+  findOnePublic(@Param('id') id: string) {
+    return this.snippetsService.findOnePublic(id);
+  }
+
+  // ── Protected endpoints (JWT required) ─────────────────────────────────
+
+  @UseGuards(JwtAuthGuard)
   @Get()
   findAll(
     @Request() req,
@@ -32,21 +50,25 @@ export class SnippetsController {
     return this.snippetsService.findAll(req.user.id, search, language, tag);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     return this.snippetsService.findOne(id, req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() dto: CreateSnippetDto, @Request() req) {
     return this.snippetsService.create(req.user.id, dto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateSnippetDto, @Request() req) {
     return this.snippetsService.update(id, req.user.id, dto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string, @Request() req) {

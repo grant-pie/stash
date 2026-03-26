@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Snippet } from './snippet.entity';
 import { CreateSnippetDto } from './dto/create-snippet.dto';
 import { UpdateSnippetDto } from './dto/update-snippet.dto';
@@ -28,14 +28,27 @@ export class SnippetsService {
         search: `%${search}%`,
       });
     }
+    if (language) qb.andWhere('snippet.language = :language', { language });
+    if (tag) qb.andWhere('snippet.tags LIKE :tag', { tag: `%${tag}%` });
 
-    if (language) {
-      qb.andWhere('snippet.language = :language', { language });
-    }
+    return qb.getMany();
+  }
 
-    if (tag) {
-      qb.andWhere('snippet.tags LIKE :tag', { tag: `%${tag}%` });
+  async findPublic(search?: string, language?: string, tag?: string): Promise<Snippet[]> {
+    const qb = this.snippetsRepo
+      .createQueryBuilder('snippet')
+      .leftJoin('snippet.user', 'user')
+      .addSelect(['user.id', 'user.username'])
+      .where('snippet.isPublic = true')
+      .orderBy('snippet.createdAt', 'DESC');
+
+    if (search) {
+      qb.andWhere('(snippet.title ILIKE :search OR snippet.description ILIKE :search)', {
+        search: `%${search}%`,
+      });
     }
+    if (language) qb.andWhere('snippet.language = :language', { language });
+    if (tag) qb.andWhere('snippet.tags LIKE :tag', { tag: `%${tag}%` });
 
     return qb.getMany();
   }
@@ -47,8 +60,21 @@ export class SnippetsService {
     return snippet;
   }
 
+  async findOnePublic(id: string): Promise<Snippet> {
+    const snippet = await this.snippetsRepo
+      .createQueryBuilder('snippet')
+      .leftJoin('snippet.user', 'user')
+      .addSelect(['user.id', 'user.username'])
+      .where('snippet.id = :id', { id })
+      .andWhere('snippet.isPublic = true')
+      .getOne();
+
+    if (!snippet) throw new NotFoundException('Snippet not found');
+    return snippet;
+  }
+
   async create(userId: string, dto: CreateSnippetDto): Promise<Snippet> {
-    const snippet = this.snippetsRepo.create({ ...dto, userId });
+    const snippet = this.snippetsRepo.create({ ...dto, tags: dto.tags ?? [], userId });
     return this.snippetsRepo.save(snippet);
   }
 

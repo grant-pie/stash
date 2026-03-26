@@ -1,13 +1,14 @@
 import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
 import api from '@/lib/axios';
 import type { Snippet } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function SnippetDetailPage() {
+export default function PublicSnippetPage() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const codeRef = useRef<HTMLElement>(null);
 
   const [snippet, setSnippet] = useState<Snippet | null>(null);
@@ -16,30 +17,16 @@ export default function SnippetDetailPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    async function load() {
-      try {
-        const { data } = await api.get<Snippet>(`/snippets/${id}`);
-        setSnippet(data);
-      } catch {
-        setError('Snippet not found');
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    api
+      .get<Snippet>(`/snippets/public/${id}`)
+      .then(({ data }) => setSnippet(data))
+      .catch(() => setError('Snippet not found or is not public.'))
+      .finally(() => setLoading(false));
   }, [id]);
 
   useEffect(() => {
-    if (codeRef.current && snippet) {
-      hljs.highlightElement(codeRef.current);
-    }
+    if (codeRef.current && snippet) hljs.highlightElement(codeRef.current);
   }, [snippet]);
-
-  async function handleDelete() {
-    if (!confirm('Delete this snippet?')) return;
-    await api.delete(`/snippets/${id}`);
-    navigate('/');
-  }
 
   async function handleCopy() {
     if (!snippet) return;
@@ -53,31 +40,36 @@ export default function SnippetDetailPage() {
     return <p className="p-8 text-sm text-red-400">{error || 'Not found'}</p>;
 
   const date = new Date(snippet.createdAt).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    year: 'numeric', month: 'long', day: 'numeric',
   });
+  const tags = (Array.isArray(snippet.tags) ? snippet.tags : []).filter(Boolean);
 
   return (
     <div className="min-h-screen">
-      {/* Navbar */}
       <header className="border-b border-gray-800 bg-surface-1">
-        <div className="mx-auto flex max-w-4xl items-center px-4 py-3">
-          <Link to="/" className="text-lg font-bold tracking-tight text-indigo-400">
-            Stash
-          </Link>
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+          <span className="text-lg font-bold tracking-tight text-indigo-400">Stash</span>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <Link to="/" className="btn-ghost text-xs">Dashboard</Link>
+            ) : (
+              <>
+                <Link to="/login" className="btn-ghost text-xs">Sign in</Link>
+                <Link to="/register" className="btn-primary text-xs">Register</Link>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
         <Link
-          to="/"
+          to="/feed"
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-100 transition-colors"
         >
-          ← Back to dashboard
+          ← Back to feed
         </Link>
 
-        {/* Meta */}
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">{snippet.title}</h1>
           {snippet.description && (
@@ -87,15 +79,15 @@ export default function SnippetDetailPage() {
             <span className="rounded bg-surface-3 px-2 py-0.5 text-indigo-300 text-xs">
               {snippet.language}
             </span>
+            {snippet.user && (
+              <span>by <span className="text-gray-300">{snippet.user.username}</span></span>
+            )}
             <span>{date}</span>
           </div>
-          {(Array.isArray(snippet.tags) ? snippet.tags : []).filter(Boolean).length > 0 && (
+          {tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {(Array.isArray(snippet.tags) ? snippet.tags : []).filter(Boolean).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-indigo-950 px-2 py-0.5 text-xs text-indigo-300"
-                >
+              {tags.map((tag) => (
+                <span key={tag} className="rounded-full bg-indigo-950 px-2 py-0.5 text-xs text-indigo-300">
                   {tag}
                 </span>
               ))}
@@ -103,7 +95,6 @@ export default function SnippetDetailPage() {
           )}
         </div>
 
-        {/* Code block */}
         <div className="relative rounded-lg overflow-hidden border border-gray-800">
           <div className="flex items-center justify-between bg-surface-3 px-4 py-2">
             <span className="text-xs text-gray-500">{snippet.language}</span>
@@ -116,16 +107,6 @@ export default function SnippetDetailPage() {
               {snippet.content}
             </code>
           </pre>
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-2">
-          <Link to={`/snippets/${id}/edit`} className="btn-ghost text-xs">
-            Edit
-          </Link>
-          <button onClick={handleDelete} className="btn-danger text-xs">
-            Delete
-          </button>
         </div>
       </main>
     </div>

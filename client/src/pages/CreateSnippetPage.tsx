@@ -17,6 +17,7 @@ export default function CreateSnippetPage() {
     language: 'typescript',
     content: '',
     tags: [],
+    isPublic: false,
   });
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
@@ -162,6 +163,35 @@ export default function CreateSnippetPage() {
               required
               spellCheck={false}
             />
+          </div>
+
+          {/* Visibility toggle */}
+          <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-surface-2 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-gray-200">
+                {form.isPublic ? 'Public' : 'Private'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {form.isPublic
+                  ? 'Anyone can discover this snippet in the feed.'
+                  : 'Only you can see this snippet.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.isPublic}
+              onClick={() => set('isPublic', !form.isPublic)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-surface-2 ${
+                form.isPublic ? 'bg-indigo-600' : 'bg-gray-700'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${
+                  form.isPublic ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
           </div>
 
           <div className="flex justify-end gap-3">

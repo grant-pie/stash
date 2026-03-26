@@ -13,6 +13,7 @@ const LANGUAGES = [
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const [snippets, setSnippets] = useState<Snippet[]>([]);
+  const [allSnippets, setAllSnippets] = useState<Snippet[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<SnippetFilters>({});
   const [search, setSearch] = useState('');
@@ -26,10 +27,20 @@ export default function DashboardPage() {
       if (f.tag) params.set('tag', f.tag);
       const { data } = await api.get<Snippet[]>(`/snippets?${params.toString()}`);
       setSnippets(data);
+      // Keep an unfiltered copy just for deriving the tag list
+      if (!f.search && !f.language && !f.tag) setAllSnippets(data);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const allTags = Array.from(
+    new Set(
+      allSnippets.flatMap((s) =>
+        (Array.isArray(s.tags) ? s.tags : []).filter(Boolean),
+      ),
+    ),
+  );
 
   useEffect(() => {
     fetchSnippets(filters);
@@ -107,6 +118,35 @@ export default function DashboardPage() {
             </button>
           )}
         </div>
+
+        {/* Tag filter pills */}
+        {allSnippets.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-gray-500 shrink-0">Tags:</span>
+            {allTags.length === 0 ? (
+              <span className="text-xs text-gray-600 italic">no tags yet</span>
+            ) : (
+              allTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() =>
+                    setFilters((f) => ({
+                      ...f,
+                      tag: f.tag === tag ? undefined : tag,
+                    }))
+                  }
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    filters.tag === tag
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-indigo-950 text-indigo-300 hover:bg-indigo-900'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Results */}
         {loading ? (

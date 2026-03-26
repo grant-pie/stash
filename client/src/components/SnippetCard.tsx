@@ -27,15 +27,15 @@ export default function SnippetCard({ snippet, onDelete }: SnippetCardProps) {
   });
 
   return (
-    <div className="card group flex flex-col gap-3 hover:border-gray-600 transition-colors">
+    <Link
+      to={`/snippets/${snippet.id}`}
+      className="card group flex flex-col gap-3 hover:border-gray-600 transition-colors cursor-pointer"
+    >
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
-        <Link
-          to={`/snippets/${snippet.id}`}
-          className="font-semibold text-gray-100 hover:text-indigo-400 transition-colors line-clamp-1"
-        >
+        <span className="font-semibold text-gray-100 group-hover:text-indigo-400 transition-colors line-clamp-1">
           {snippet.title}
-        </Link>
+        </span>
         <span className="flex items-center gap-1.5 shrink-0 text-xs text-gray-400">
           <span className={`inline-block h-2 w-2 rounded-full ${dotColor}`} />
           {snippet.language}
@@ -55,7 +55,7 @@ export default function SnippetCard({ snippet, onDelete }: SnippetCardProps) {
       {/* Footer */}
       <div className="flex items-center justify-between">
         <div className="flex flex-wrap gap-1">
-          {snippet.tags.filter(Boolean).map((tag) => (
+          {(Array.isArray(snippet.tags) ? snippet.tags : []).filter(Boolean).map((tag) => (
             <span
               key={tag}
               className="rounded-full bg-indigo-950 px-2 py-0.5 text-xs text-indigo-300"
@@ -68,7 +68,10 @@ export default function SnippetCard({ snippet, onDelete }: SnippetCardProps) {
           <span className="text-xs text-gray-600">{date}</span>
           {onDelete && (
             <button
-              onClick={() => onDelete(snippet.id)}
+              onClick={(e) => {
+                e.preventDefault();
+                onDelete(snippet.id);
+              }}
               className="hidden group-hover:inline-flex text-xs text-red-400 hover:text-red-300 transition-colors"
             >
               Delete
@@ -76,6 +79,6 @@ export default function SnippetCard({ snippet, onDelete }: SnippetCardProps) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

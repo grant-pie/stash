@@ -6,20 +6,38 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // When the server tells us the email isn't verified, offer a direct link to register
+  // (which will resend the verification email)
+  const [showResendHint, setShowResendHint] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
+    setShowResendHint(false);
     setLoading(true);
     try {
-      await login(email, password);
+      await login(identifier, password);
       navigate('/');
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Login failed');
+      const data = err?.response?.data;
+      const msg = data?.message;
+
+      if (data?.errorCode === 'EMAIL_NOT_VERIFIED') {
+        setShowResendHint(true);
+      }
+
+      if (Array.isArray(msg)) {
+        setError(msg.join(' · '));
+      } else if (typeof msg === 'string') {
+        setError(msg);
+      } else {
+        setError('Could not connect to the server. Please try again.');
+      }
+
     } finally {
       setLoading(false);
     }
@@ -35,21 +53,34 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="card space-y-4">
           {error && (
-            <p className="rounded bg-red-950 px-3 py-2 text-sm text-red-400">{error}</p>
+            <div className="rounded bg-red-950 px-3 py-2 text-sm text-red-400 space-y-1">
+              <p>{error}</p>
+              {showResendHint && (
+                <p className="text-xs text-red-300">
+                  Need a new link?{' '}
+                  <Link
+                    to="/register"
+                    className="underline hover:text-white"
+                  >
+                    Resend verification email
+                  </Link>
+                </p>
+              )}
+            </div>
           )}
 
           <div className="space-y-1">
-            <label htmlFor="email" className="block text-xs text-gray-400">
-              Email
+            <label htmlFor="identifier" className="block text-xs text-gray-400">
+              Email or username
             </label>
             <input
-              id="email"
-              type="email"
+              id="identifier"
+              type="text"
               className="input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
-              autoComplete="email"
+              autoComplete="username"
             />
           </div>
 
@@ -66,6 +97,12 @@ export default function LoginPage() {
               required
               autoComplete="current-password"
             />
+          </div>
+
+          <div className="flex items-center justify-end">
+            <Link to="/forgot-password" className="text-xs text-indigo-400 hover:underline">
+              Forgot password?
+            </Link>
           </div>
 
           <button type="submit" className="btn-primary w-full" disabled={loading}>

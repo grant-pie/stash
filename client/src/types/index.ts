@@ -15,8 +15,10 @@ export interface Snippet {
   language: string;
   content: string;
   tags: string[];
+  isPublic: boolean;
   userId: string;
-  createdAt: string; // ISO date string from the API
+  user?: { id: string; username: string }; // populated on public feed endpoints
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -35,6 +37,7 @@ export interface CreateSnippetPayload {
   language: string;
   content: string;
   tags?: string[];
+  isPublic?: boolean;
 }
 
 export type UpdateSnippetPayload = Partial<CreateSnippetPayload>;

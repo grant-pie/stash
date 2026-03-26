@@ -1,29 +1,80 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function RegisterPage() {
   const { register } = useAuth();
-  const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
     setLoading(true);
     try {
       await register(email, username, password);
-      navigate('/');
+      setVerificationSent(true);
     } catch (err: any) {
-      setError(err?.response?.data?.message ?? 'Registration failed');
+      const data = err?.response?.data;
+      const msg = data?.message;
+
+      if (data?.errorCode === 'EMAIL_NOT_VERIFIED') {
+        setVerificationSent(true);
+        return;
+      }
+
+      if (Array.isArray(msg)) {
+        setError(msg.join(' · '));
+      } else if (typeof msg === 'string') {
+        setError(msg);
+      } else {
+        setError('Could not connect to the server. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
+  }
+
+  if (verificationSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-sm space-y-4 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-indigo-950 text-3xl">
+            ✉️
+          </div>
+          <h1 className="text-xl font-bold">Check your inbox</h1>
+          <p className="text-sm text-gray-400">
+            We sent a verification link to{' '}
+            <span className="text-gray-200">{email}</span>.
+            <br />
+            Click the link in the email to activate your account.
+          </p>
+          <p className="text-xs text-gray-600">
+            Didn't receive it? Check your spam folder, or{' '}
+            <button
+              onClick={handleSubmit as any}
+              className="text-indigo-400 hover:underline"
+            >
+              resend the email
+            </button>
+            .
+          </p>
+          <Link to="/login" className="inline-block text-sm text-indigo-400 hover:underline">
+            Back to sign in
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -81,6 +132,23 @@ export default function RegisterPage() {
               required
               minLength={8}
             />
+          </div>
+
+          <div className="space-y-1">
+            <label htmlFor="confirmPassword" className="block text-xs text-gray-400">
+              Confirm password
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              className={`input ${confirmPassword && confirmPassword !== password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+            {confirmPassword && confirmPassword !== password && (
+              <p className="text-xs text-red-400">Passwords do not match.</p>
+            )}
           </div>
 
           <button type="submit" className="btn-primary w-full" disabled={loading}>

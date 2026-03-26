@@ -12,8 +12,8 @@ import api from '@/lib/axios';
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, username: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
+  register: (email: string, username: string, password: string) => Promise<{ message: string }>;
   logout: () => void;
 }
 
@@ -28,7 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Rehydrate from localStorage on first load
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) {
@@ -41,28 +40,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  // Listen for 401 events dispatched by the axios interceptor
   useEffect(() => {
     const handleLogout = () => setUser(null);
     window.addEventListener('auth:logout', handleLogout);
     return () => window.removeEventListener('auth:logout', handleLogout);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { data } = await api.post<AuthResponse>('/auth/login', { email, password });
+  const login = useCallback(async (identifier: string, password: string) => {
+    const { data } = await api.post<AuthResponse>('/auth/login', { identifier, password });
     persistAuth(data);
     setUser(data.user);
   }, []);
 
+  // Registration no longer auto-logs in — email must be verified first.
+  // Returns the success message from the server so the page can react.
   const register = useCallback(
     async (email: string, username: string, password: string) => {
-      const { data } = await api.post<AuthResponse>('/auth/register', {
+      const { data } = await api.post<{ message: string }>('/auth/register', {
         email,
         username,
         password,
       });
-      persistAuth(data);
-      setUser(data.user);
+      return data;
     },
     [],
   );
