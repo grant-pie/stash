@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '@/lib/axios';
 import type { Snippet, SnippetFilters } from '@/types';
 import SnippetCard from '@/components/SnippetCard';
-import { useAuth } from '@/contexts/AuthContext';
+import Navbar from '@/components/Navbar';
 
 const LANGUAGES = [
   'TypeScript', 'JavaScript', 'Python', 'Rust', 'Go',
@@ -11,7 +11,6 @@ const LANGUAGES = [
 ];
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
   const [snippets, setSnippets] = useState<Snippet[]>([]);
   const [allSnippets, setAllSnippets] = useState<Snippet[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,21 +58,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Navbar */}
-      <header className="border-b border-gray-800 bg-surface-1">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <span className="text-lg font-bold tracking-tight text-indigo-400">Stash</span>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-400">{user?.username}</span>
-            <button onClick={logout} className="btn-ghost text-xs">
-              Sign out
-            </button>
-            <Link to="/snippets/new" className="btn-primary text-xs">
-              + New snippet
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
         {/* Filters bar */}

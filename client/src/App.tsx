@@ -9,6 +9,8 @@ import CreateSnippetPage from '@/pages/CreateSnippetPage';
 import VerifyEmailPage from '@/pages/VerifyEmailPage';
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
+import FeedPage from '@/pages/FeedPage';
+import PublicSnippetPage from '@/pages/PublicSnippetPage';
 
 export default function App() {
   return (
@@ -21,18 +23,20 @@ export default function App() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/feed" element={<FeedPage />} />
+          <Route path="/feed/:id" element={<PublicSnippetPage />} />
 
           {/* Protected */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<DashboardPage />} />
+            <Route path="/my-snippets" element={<DashboardPage />} />
             <Route path="/snippets/new" element={<CreateSnippetPage />} />
             <Route path="/snippets/:id" element={<SnippetDetailPage />} />
-            {/* Edit page can reuse CreateSnippetPage with pre-filled data — stub */}
             <Route path="/snippets/:id/edit" element={<CreateSnippetPage />} />
           </Route>
 
           {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/" element={<Navigate to="/feed" replace />} />
+          <Route path="*" element={<Navigate to="/feed" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

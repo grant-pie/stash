@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/axios';
 import type { Snippet, SnippetFilters } from '@/types';
+import Navbar from '@/components/Navbar';
 import { useAuth } from '@/contexts/AuthContext';
 
 const LANGUAGES = [
@@ -47,27 +48,7 @@ export default function FeedPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-gray-800 bg-surface-1">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <span className="text-lg font-bold tracking-tight text-indigo-400">Stash</span>
-          <div className="flex items-center gap-3">
-            {user ? (
-              <Link to="/" className="btn-ghost text-xs">
-                Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link to="/login" className="btn-ghost text-xs">
-                  Sign in
-                </Link>
-                <Link to="/register" className="btn-primary text-xs">
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
         <div>

@@ -4,11 +4,10 @@ import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
 import api from '@/lib/axios';
 import type { Snippet } from '@/types';
-import { useAuth } from '@/contexts/AuthContext';
+import Navbar from '@/components/Navbar';
 
 export default function PublicSnippetPage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
   const codeRef = useRef<HTMLElement>(null);
 
   const [snippet, setSnippet] = useState<Snippet | null>(null);
@@ -46,21 +45,7 @@ export default function PublicSnippetPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-gray-800 bg-surface-1">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-          <span className="text-lg font-bold tracking-tight text-indigo-400">Stash</span>
-          <div className="flex items-center gap-3">
-            {user ? (
-              <Link to="/" className="btn-ghost text-xs">Dashboard</Link>
-            ) : (
-              <>
-                <Link to="/login" className="btn-ghost text-xs">Sign in</Link>
-                <Link to="/register" className="btn-primary text-xs">Register</Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
         <Link
