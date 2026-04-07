@@ -14,6 +14,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 function mockAuth(overrides: Partial<ReturnType<typeof AuthContext.useAuth>> = {}) {
   vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
     user: null,
+    isAdmin: false,
     isLoading: false,
     login: vi.fn(),
     register: vi.fn(),
@@ -73,7 +74,7 @@ describe('Navbar', () => {
 
     beforeEach(() =>
       mockAuth({
-        user: { id: '1', email: 'a@b.com', username: 'alice' },
+        user: { id: '1', email: 'a@b.com', username: 'alice', role: 'user' },
         logout: mockLogout,
       }),
     );
@@ -104,6 +105,30 @@ describe('Navbar', () => {
       await userEvent.click(screen.getByRole('button', { name: /sign out/i }));
       expect(mockLogout).toHaveBeenCalledOnce();
       expect(mockNavigate).toHaveBeenCalledWith('/feed', { replace: true });
+    });
+
+    it('does not render the Admin link for a non-admin user', () => {
+      renderNavbar();
+      expect(screen.queryByRole('link', { name: 'Admin' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('when logged in as admin', () => {
+    beforeEach(() =>
+      mockAuth({
+        user: { id: '2', email: 'admin@example.com', username: 'adminuser', role: 'admin' },
+        isAdmin: true,
+      }),
+    );
+
+    it('renders the Admin nav link', () => {
+      renderNavbar();
+      expect(screen.getByRole('link', { name: 'Admin' })).toBeInTheDocument();
+    });
+
+    it('Admin link points to /admin', () => {
+      renderNavbar();
+      expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute('href', '/admin');
     });
   });
 });

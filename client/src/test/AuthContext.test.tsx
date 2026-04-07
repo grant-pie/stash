@@ -20,10 +20,11 @@ const mockPost = vi.mocked(api.post);
 
 // Simple consumer that exposes AuthContext via the DOM
 function AuthConsumer() {
-  const { user, login, logout, register } = useAuth();
+  const { user, isAdmin, login, logout, register } = useAuth();
   return (
     <div>
       <span data-testid="username">{user?.username ?? 'none'}</span>
+      <span data-testid="isAdmin">{String(isAdmin)}</span>
       <button onClick={() => login('alice@example.com', 'password')}>Login</button>
       <button onClick={logout}>Logout</button>
       <button onClick={() => register('alice@example.com', 'alice', 'password')}>Register</button>
@@ -41,7 +42,7 @@ function renderWithProvider() {
 
 const fakeAuthResponse: AuthResponse = {
   access_token: 'tok123',
-  user: { id: '1', email: 'alice@example.com', username: 'alice' },
+  user: { id: '1', email: 'alice@example.com', username: 'alice', role: 'user' },
 };
 
 describe('AuthContext', () => {
@@ -134,6 +135,47 @@ describe('AuthContext', () => {
 
       await waitFor(() =>
         expect(screen.getByTestId('username')).toHaveTextContent('none'),
+      );
+    });
+  });
+
+  describe('isAdmin', () => {
+    it('is false when there is no user', async () => {
+      renderWithProvider();
+      await waitFor(() =>
+        expect(screen.getByTestId('isAdmin')).toHaveTextContent('false'),
+      );
+    });
+
+    it('is false when the stored user has role "user"', async () => {
+      localStorage.setItem('user', JSON.stringify(fakeAuthResponse.user));
+      renderWithProvider();
+      await waitFor(() =>
+        expect(screen.getByTestId('isAdmin')).toHaveTextContent('false'),
+      );
+    });
+
+    it('is true when the stored user has role "admin"', async () => {
+      localStorage.setItem(
+        'user',
+        JSON.stringify({ ...fakeAuthResponse.user, role: 'admin' }),
+      );
+      renderWithProvider();
+      await waitFor(() =>
+        expect(screen.getByTestId('isAdmin')).toHaveTextContent('true'),
+      );
+    });
+
+    it('reflects role from login response', async () => {
+      mockPost.mockResolvedValueOnce({
+        data: { ...fakeAuthResponse, user: { ...fakeAuthResponse.user, role: 'admin' } },
+      });
+      renderWithProvider();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+      await waitFor(() =>
+        expect(screen.getByTestId('isAdmin')).toHaveTextContent('true'),
       );
     });
   });
