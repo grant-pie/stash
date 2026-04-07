@@ -55,21 +55,22 @@ describe('ResetPasswordPage', () => {
   describe('when a token is present', () => {
     it('renders the new password and confirm password inputs', () => {
       renderPage();
-      expect(screen.getByLabelText(/new password/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/confirm new password/i)).toBeInTheDocument();
+      // Use exact labels to avoid /new password/i matching both fields
+      expect(screen.getByLabelText('New password')).toBeInTheDocument();
+      expect(screen.getByLabelText('Confirm new password')).toBeInTheDocument();
     });
 
     it('shows an inline mismatch hint as the user types', async () => {
       renderPage();
-      await userEvent.type(screen.getByLabelText(/^new password/i), 'password1');
-      await userEvent.type(screen.getByLabelText(/confirm new password/i), 'different');
+      await userEvent.type(screen.getByLabelText('New password'), 'password1');
+      await userEvent.type(screen.getByLabelText('Confirm new password'), 'different');
       expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
     });
 
     it('does not call the API when passwords mismatch on submit', async () => {
       renderPage();
-      await userEvent.type(screen.getByLabelText(/^new password/i), 'password1');
-      await userEvent.type(screen.getByLabelText(/confirm new password/i), 'password2');
+      await userEvent.type(screen.getByLabelText('New password'), 'password1');
+      await userEvent.type(screen.getByLabelText('Confirm new password'), 'password2');
       await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
       expect(mockPost).not.toHaveBeenCalled();
     });
@@ -78,8 +79,8 @@ describe('ResetPasswordPage', () => {
       mockPost.mockResolvedValueOnce({ data: {} });
       renderPage();
 
-      await userEvent.type(screen.getByLabelText(/^new password/i), 'newpassword1');
-      await userEvent.type(screen.getByLabelText(/confirm new password/i), 'newpassword1');
+      await userEvent.type(screen.getByLabelText('New password'), 'newpassword1');
+      await userEvent.type(screen.getByLabelText('Confirm new password'), 'newpassword1');
       await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() =>
@@ -94,8 +95,8 @@ describe('ResetPasswordPage', () => {
       mockPost.mockResolvedValueOnce({ data: {} });
       renderPage();
 
-      await userEvent.type(screen.getByLabelText(/^new password/i), 'newpassword1');
-      await userEvent.type(screen.getByLabelText(/confirm new password/i), 'newpassword1');
+      await userEvent.type(screen.getByLabelText('New password'), 'newpassword1');
+      await userEvent.type(screen.getByLabelText('Confirm new password'), 'newpassword1');
       await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() =>
@@ -107,8 +108,8 @@ describe('ResetPasswordPage', () => {
       mockPost.mockResolvedValueOnce({ data: {} });
       renderPage();
 
-      await userEvent.type(screen.getByLabelText(/^new password/i), 'newpassword1');
-      await userEvent.type(screen.getByLabelText(/confirm new password/i), 'newpassword1');
+      await userEvent.type(screen.getByLabelText('New password'), 'newpassword1');
+      await userEvent.type(screen.getByLabelText('Confirm new password'), 'newpassword1');
       await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() =>
@@ -122,8 +123,8 @@ describe('ResetPasswordPage', () => {
       });
       renderPage();
 
-      await userEvent.type(screen.getByLabelText(/^new password/i), 'newpassword1');
-      await userEvent.type(screen.getByLabelText(/confirm new password/i), 'newpassword1');
+      await userEvent.type(screen.getByLabelText('New password'), 'newpassword1');
+      await userEvent.type(screen.getByLabelText('Confirm new password'), 'newpassword1');
       await userEvent.click(screen.getByRole('button', { name: /reset password/i }));
 
       await waitFor(() =>

@@ -68,9 +68,10 @@ describe('AdminUserDetailPage', () => {
 
   it('renders username, email, role, and snippet count', async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText('alice')).toBeInTheDocument());
+    // 'alice' appears in breadcrumb + profile; 'user' appears in badge + <option>
+    await waitFor(() => expect(screen.getAllByText('alice').length).toBeGreaterThanOrEqual(1));
     expect(screen.getByText('alice@example.com')).toBeInTheDocument();
-    expect(screen.getByText('user')).toBeInTheDocument();
+    expect(screen.getAllByText('user').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/8 snippets/i)).toBeInTheDocument();
   });
 

@@ -31,19 +31,27 @@ function renderPage(search = '?token=valid-token') {
 describe('VerifyEmailPage', () => {
   beforeEach(() => mockGet.mockReset());
 
-  it('shows the loading indicator before the API responds', () => {
-    // Never resolves — simulates pending request
-    mockGet.mockReturnValue(new Promise(() => {}));
+  // Fix: resolve the deferred promise after asserting loading state so React
+  // can finish its async work before the next test's beforeEach runs.
+  it('shows the loading indicator before the API responds', async () => {
+    let resolve!: (v: any) => void;
+    mockGet.mockReturnValue(new Promise((res) => { resolve = res; }));
     renderPage();
     expect(screen.getByText(/verifying your email/i)).toBeInTheDocument();
+    resolve({ data: { message: 'ok' } });
+    await waitFor(() =>
+      expect(screen.queryByText(/verifying your email/i)).not.toBeInTheDocument(),
+    );
   });
 
+  // Fix: use getByRole('heading') to avoid matching the paragraph that also
+  // contains "Email verified!" as part of the full message string.
   it('shows the success state when the API returns successfully', async () => {
     mockGet.mockResolvedValueOnce({ data: { message: 'Email verified! You can now sign in.' } });
     renderPage();
 
     await waitFor(() =>
-      expect(screen.getByText(/email verified!/i)).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: /email verified!/i })).toBeInTheDocument(),
     );
   });
 
@@ -72,7 +80,7 @@ describe('VerifyEmailPage', () => {
     renderPage();
 
     await waitFor(() =>
-      expect(screen.getByText(/verification failed/i)).toBeInTheDocument(),
+      expect(screen.getByRole('heading', { name: /verification failed/i })).toBeInTheDocument(),
     );
   });
 
@@ -105,7 +113,7 @@ describe('VerifyEmailPage', () => {
 
   it('shows an error immediately when there is no token in the URL', () => {
     renderPage('');
-    expect(screen.getByText(/verification failed/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /verification failed/i })).toBeInTheDocument();
     expect(mockGet).not.toHaveBeenCalled();
   });
 });

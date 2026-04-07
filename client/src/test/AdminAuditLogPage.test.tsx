@@ -82,9 +82,14 @@ describe('AdminAuditLogPage', () => {
 
   it('renders a row for each log entry', async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText('USER_SUSPENDED')).toBeInTheDocument());
-    expect(screen.getByText('SNIPPET_DELETED')).toBeInTheDocument();
-    expect(screen.getByText('USER_ROLE_CHANGED')).toBeInTheDocument();
+    // Action names also appear as <option> values in the filter dropdown,
+    // so use getAllByText and confirm at least 2 instances (option + badge).
+    await waitFor(() =>
+      expect(screen.getAllByText('USER_SUSPENDED').length).toBeGreaterThanOrEqual(1),
+    );
+    // SNIPPET_DELETED exists in the filter <option> AND the table badge
+    expect(screen.getAllByText('SNIPPET_DELETED').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText('USER_ROLE_CHANGED').length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows admin username for each log entry', async () => {

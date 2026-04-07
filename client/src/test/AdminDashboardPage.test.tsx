@@ -59,10 +59,15 @@ function renderPage() {
 describe('AdminDashboardPage', () => {
   beforeEach(() => mockGet.mockReset());
 
-  it('shows loading state before data resolves', () => {
-    mockGet.mockReturnValue(new Promise(() => {}));
+  // Fix: resolve the deferred promise after asserting so React can finish
+  // its async work before the next test's beforeEach runs.
+  it('shows loading state before data resolves', async () => {
+    let resolve!: (v: any) => void;
+    mockGet.mockReturnValue(new Promise((res) => { resolve = res; }));
     renderPage();
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    resolve({ data: fakeStats });
+    await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument());
   });
 
   it('renders all five stat cards with correct values', async () => {

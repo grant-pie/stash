@@ -52,7 +52,7 @@ export default function AdminDashboardPage() {
           api.get<PaginatedResponse<AuditLog>>('/admin/audit-logs?limit=8'),
         ]);
         setStats(statsRes.data);
-        setRecentLogs(logsRes.data.data);
+        setRecentLogs(logsRes.data.data ?? []);
       } finally {
         setLoading(false);
       }

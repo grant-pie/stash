@@ -143,7 +143,9 @@ describe('AdminUsersPage', () => {
     renderPage();
     await waitFor(() => screen.getByText('alice'));
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: '' }), 'admin');
+    // There are two unlabelled comboboxes (role + suspended); role is first
+    const selects = screen.getAllByRole('combobox');
+    await userEvent.selectOptions(selects[0], 'admin');
 
     await waitFor(() => {
       const calls = mockGet.mock.calls;
