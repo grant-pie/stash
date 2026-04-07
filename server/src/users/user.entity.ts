@@ -8,6 +8,12 @@ import {
 } from 'typeorm';
 import { Snippet } from '../snippets/snippet.entity';
 
+export enum UserRole {
+  USER = 'user',
+  MODERATOR = 'moderator',
+  ADMIN = 'admin',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -33,6 +39,18 @@ export class User {
 
   @Column({ type: 'timestamptz', nullable: true })
   resetPasswordExpiry: Date | null;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role: UserRole;
+
+  @Column({ default: false })
+  isSuspended: boolean;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  suspendedAt: Date | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  suspendReason: string | null;
 
   @OneToMany(() => Snippet, (snippet) => snippet.user)
   snippets: Snippet[];

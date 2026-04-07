@@ -94,10 +94,19 @@ export class AuthService {
       });
     }
 
+    if (user.isSuspended) {
+      throw new UnauthorizedException({
+        message: user.suspendReason
+          ? `Your account has been suspended: ${user.suspendReason}`
+          : 'Your account has been suspended. Please contact support.',
+        errorCode: 'ACCOUNT_SUSPENDED',
+      });
+    }
+
     const accessToken = this.jwtService.sign({ sub: user.id, email: user.email });
     return {
       access_token: accessToken,
-      user: { id: user.id, email: user.email, username: user.username },
+      user: { id: user.id, email: user.email, username: user.username, role: user.role },
     };
   }
 
