@@ -1,8 +1,9 @@
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
+
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -38,6 +39,18 @@ export default function Navbar() {
                 }
               >
                 My Snippets
+              </NavLink>
+            )}
+            {isAdmin && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) =>
+                  `rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    isActive ? 'bg-red-900/40 text-red-300' : 'text-red-400 hover:text-red-300'
+                  }`
+                }
+              >
+                Admin
               </NavLink>
             )}
           </nav>
