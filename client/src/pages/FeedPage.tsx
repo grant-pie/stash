@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/axios';
-import type { Snippet, SnippetFilters } from '@/types';
+import type { Snippet, SnippetFilters, PaginatedResponse } from '@/types';
 import Navbar from '@/components/Navbar';
+import Pagination from '@/components/Pagination';
 import { useAuth } from '@/contexts/AuthContext';
 
 const LANGUAGES = [
@@ -16,33 +17,41 @@ const LANGUAGE_COLORS: Record<string, string> = {
   html: 'bg-red-500', sql: 'bg-purple-500', bash: 'bg-gray-400',
 };
 
+const LIMIT = 12;
+
 export default function FeedPage() {
   const { user } = useAuth();
   const [snippets, setSnippets] = useState<Snippet[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<SnippetFilters>({});
   const [search, setSearch] = useState('');
 
-  const fetchSnippets = useCallback(async (f: SnippetFilters) => {
+  const fetchSnippets = useCallback(async (f: SnippetFilters, p: number) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (f.search) params.set('search', f.search);
       if (f.language) params.set('language', f.language);
       if (f.tag) params.set('tag', f.tag);
-      const { data } = await api.get<Snippet[]>(`/snippets/public?${params.toString()}`);
-      setSnippets(data);
+      params.set('page', String(p));
+      params.set('limit', String(LIMIT));
+      const { data } = await api.get<PaginatedResponse<Snippet>>(`/snippets/public?${params.toString()}`);
+      setSnippets(data.data);
+      setTotal(data.total);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchSnippets(filters);
-  }, [filters, fetchSnippets]);
+    fetchSnippets(filters, page);
+  }, [filters, page, fetchSnippets]);
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setPage(1);
     setFilters((f) => ({ ...f, search }));
   }
 
@@ -74,9 +83,10 @@ export default function FeedPage() {
           <select
             className="input w-auto"
             value={filters.language ?? ''}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, language: e.target.value || undefined }))
-            }
+            onChange={(e) => {
+              setPage(1);
+              setFilters((f) => ({ ...f, language: e.target.value || undefined }));
+            }}
           >
             <option value="">All languages</option>
             {LANGUAGES.map((l) => (
@@ -87,7 +97,7 @@ export default function FeedPage() {
           {(filters.search || filters.language) && (
             <button
               className="btn-ghost text-xs"
-              onClick={() => { setFilters({}); setSearch(''); }}
+              onClick={() => { setPage(1); setFilters({}); setSearch(''); }}
             >
               Clear
             </button>
@@ -107,6 +117,7 @@ export default function FeedPage() {
             )}
           </div>
         ) : (
+          <>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {snippets.map((snippet) => {
               const dotColor = LANGUAGE_COLORS[snippet.language.toLowerCase()] ?? 'bg-indigo-400';
@@ -156,6 +167,8 @@ export default function FeedPage() {
               );
             })}
           </div>
+          <Pagination page={page} total={total} limit={LIMIT} onChange={setPage} />
+          </>
         )}
       </main>
     </div>

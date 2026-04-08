@@ -28,8 +28,16 @@ export class SnippetsController {
     @Query('search') search?: string,
     @Query('language') language?: string,
     @Query('tag') tag?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.snippetsService.findPublic(search, language, tag);
+    return this.snippetsService.findPublic(
+      search,
+      language,
+      tag,
+      page ? parseInt(page, 10) : undefined,
+      limit ? parseInt(limit, 10) : undefined,
+    );
   }
 
   @Get('public/:id')
@@ -46,8 +54,17 @@ export class SnippetsController {
     @Query('search') search?: string,
     @Query('language') language?: string,
     @Query('tag') tag?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.snippetsService.findAll(req.user.id, search, language, tag);
+    return this.snippetsService.findAll(
+      req.user.id,
+      search,
+      language,
+      tag,
+      page ? parseInt(page, 10) : undefined,
+      limit ? parseInt(limit, 10) : undefined,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

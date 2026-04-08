@@ -1,33 +1,41 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/axios';
-import type { Snippet, SnippetFilters } from '@/types';
+import type { Snippet, SnippetFilters, PaginatedResponse } from '@/types';
 import SnippetCard from '@/components/SnippetCard';
 import Navbar from '@/components/Navbar';
+import Pagination from '@/components/Pagination';
 
 const LANGUAGES = [
   'TypeScript', 'JavaScript', 'Python', 'Rust', 'Go',
   'CSS', 'HTML', 'SQL', 'Bash', 'Other',
 ];
 
+const LIMIT = 12;
+
 export default function DashboardPage() {
   const [snippets, setSnippets] = useState<Snippet[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [allSnippets, setAllSnippets] = useState<Snippet[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<SnippetFilters>({});
   const [search, setSearch] = useState('');
 
-  const fetchSnippets = useCallback(async (f: SnippetFilters) => {
+  const fetchSnippets = useCallback(async (f: SnippetFilters, p: number) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (f.search) params.set('search', f.search);
       if (f.language) params.set('language', f.language);
       if (f.tag) params.set('tag', f.tag);
-      const { data } = await api.get<Snippet[]>(`/snippets?${params.toString()}`);
-      setSnippets(data);
+      params.set('page', String(p));
+      params.set('limit', String(LIMIT));
+      const { data } = await api.get<PaginatedResponse<Snippet>>(`/snippets?${params.toString()}`);
+      setSnippets(data.data);
+      setTotal(data.total);
       // Keep an unfiltered copy just for deriving the tag list
-      if (!f.search && !f.language && !f.tag) setAllSnippets(data);
+      if (!f.search && !f.language && !f.tag) setAllSnippets(data.data);
     } finally {
       setLoading(false);
     }
@@ -42,18 +50,25 @@ export default function DashboardPage() {
   );
 
   useEffect(() => {
-    fetchSnippets(filters);
-  }, [filters, fetchSnippets]);
+    fetchSnippets(filters, page);
+  }, [filters, page, fetchSnippets]);
 
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setPage(1);
     setFilters((f) => ({ ...f, search }));
+  }
+
+  function handleFilterChange(patch: Partial<SnippetFilters>) {
+    setPage(1);
+    setFilters((f) => ({ ...f, ...patch }));
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this snippet?')) return;
     await api.delete(`/snippets/${id}`);
-    setSnippets((prev) => prev.filter((s) => s.id !== id));
+    // Re-fetch the current page so counts stay accurate
+    fetchSnippets(filters, page);
   }
 
   return (
@@ -79,9 +94,7 @@ export default function DashboardPage() {
           <select
             className="input w-auto"
             value={filters.language ?? ''}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, language: e.target.value || undefined }))
-            }
+            onChange={(e) => handleFilterChange({ language: e.target.value || undefined })}
           >
             <option value="">All languages</option>
             {LANGUAGES.map((l) => (
@@ -95,6 +108,7 @@ export default function DashboardPage() {
             <button
               className="btn-ghost text-xs"
               onClick={() => {
+                setPage(1);
                 setFilters({});
                 setSearch('');
               }}
@@ -114,12 +128,8 @@ export default function DashboardPage() {
               allTags.map((tag) => (
                 <button
                   key={tag}
-                  onClick={() =>
-                    setFilters((f) => ({
-                      ...f,
-                      tag: f.tag === tag ? undefined : tag,
-                    }))
-                  }
+                  onClick={() => handleFilterChange({ tag: filters.tag === tag ? undefined : tag })}
+
                   className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                     filters.tag === tag
                       ? 'bg-indigo-600 text-white'
@@ -144,11 +154,14 @@ export default function DashboardPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {snippets.map((s) => (
-              <SnippetCard key={s.id} snippet={s} onDelete={handleDelete} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {snippets.map((s) => (
+                <SnippetCard key={s.id} snippet={s} onDelete={handleDelete} />
+              ))}
+            </div>
+            <Pagination page={page} total={total} limit={LIMIT} onChange={setPage} />
+          </>
         )}
       </main>
     </div>

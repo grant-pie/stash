@@ -30,12 +30,12 @@ describe('SnippetsController', () => {
     controller = module.get<SnippetsController>(SnippetsController);
   });
 
-  it('findPublic() calls service.findPublic with query params', async () => {
-    const expected = [{ id: '1' }];
+  it('findPublic() calls service.findPublic with query params including parsed page/limit', async () => {
+    const expected = { data: [{ id: '1' }], total: 1, page: 2, limit: 12 };
     mockSnippetsService.findPublic.mockResolvedValueOnce(expected);
 
-    const result = await controller.findPublic('hello', 'ts', 'react');
-    expect(mockSnippetsService.findPublic).toHaveBeenCalledWith('hello', 'ts', 'react');
+    const result = await controller.findPublic('hello', 'ts', 'react', '2', '12');
+    expect(mockSnippetsService.findPublic).toHaveBeenCalledWith('hello', 'ts', 'react', 2, 12);
     expect(result).toBe(expected);
   });
 
@@ -48,12 +48,12 @@ describe('SnippetsController', () => {
     expect(result).toBe(expected);
   });
 
-  it('findAll() passes req.user.id and query filters to service.findAll', async () => {
-    const expected = [{ id: '1' }];
+  it('findAll() passes req.user.id, query filters, and parsed page/limit to service.findAll', async () => {
+    const expected = { data: [{ id: '1' }], total: 1, page: 1, limit: 12 };
     mockSnippetsService.findAll.mockResolvedValueOnce(expected);
 
-    const result = await controller.findAll(makeReq(), 'search', 'ts', 'tag');
-    expect(mockSnippetsService.findAll).toHaveBeenCalledWith('user-uuid', 'search', 'ts', 'tag');
+    const result = await controller.findAll(makeReq(), 'search', 'ts', 'tag', '1', '12');
+    expect(mockSnippetsService.findAll).toHaveBeenCalledWith('user-uuid', 'search', 'ts', 'tag', 1, 12);
     expect(result).toBe(expected);
   });
 

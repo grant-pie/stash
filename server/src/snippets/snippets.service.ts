@@ -17,7 +17,9 @@ export class SnippetsService {
     search?: string,
     language?: string,
     tag?: string,
-  ): Promise<Snippet[]> {
+    page = 1,
+    limit = 12,
+  ): Promise<{ data: Snippet[]; total: number; page: number; limit: number }> {
     const qb = this.snippetsRepo
       .createQueryBuilder('snippet')
       .where('snippet.userId = :userId', { userId })
@@ -31,10 +33,19 @@ export class SnippetsService {
     if (language) qb.andWhere('snippet.language = :language', { language });
     if (tag) qb.andWhere('snippet.tags LIKE :tag', { tag: `%${tag}%` });
 
-    return qb.getMany();
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total, page, limit };
   }
 
-  async findPublic(search?: string, language?: string, tag?: string): Promise<Snippet[]> {
+  async findPublic(
+    search?: string,
+    language?: string,
+    tag?: string,
+    page = 1,
+    limit = 12,
+  ): Promise<{ data: Snippet[]; total: number; page: number; limit: number }> {
     const qb = this.snippetsRepo
       .createQueryBuilder('snippet')
       .leftJoin('snippet.user', 'user')
@@ -50,7 +61,10 @@ export class SnippetsService {
     if (language) qb.andWhere('snippet.language = :language', { language });
     if (tag) qb.andWhere('snippet.tags LIKE :tag', { tag: `%${tag}%` });
 
-    return qb.getMany();
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total, page, limit };
   }
 
   async findOne(id: string, userId: string): Promise<Snippet> {

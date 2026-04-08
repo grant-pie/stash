@@ -23,10 +23,12 @@ function makeQb(result: unknown = null, many: unknown[] = []) {
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
     leftJoin: jest.fn().mockReturnThis(),
     leftJoinAndSelect: jest.fn().mockReturnThis(),
     addSelect: jest.fn().mockReturnThis(),
-    getMany: jest.fn().mockResolvedValue(many),
+    getManyAndCount: jest.fn().mockResolvedValue([many, many.length]),
     getOne: jest.fn().mockResolvedValue(result),
   };
   return qb;
@@ -103,6 +105,17 @@ describe('SnippetsService', () => {
         { tag: '%react%' },
       );
     });
+
+    it('paginates with skip and take and returns { data, total, page, limit }', async () => {
+      const snippet = makeSnippet();
+      const qb = makeQb(null, [snippet]);
+      mockRepo.createQueryBuilder.mockReturnValueOnce(qb);
+
+      const result = await service.findAll('owner-uuid', undefined, undefined, undefined, 2, 12);
+      expect(qb.skip).toHaveBeenCalledWith(12); // (2-1)*12
+      expect(qb.take).toHaveBeenCalledWith(12);
+      expect(result).toMatchObject({ data: [snippet], total: 1, page: 2, limit: 12 });
+    });
   });
 
   // ─── findPublic ───────────────────────────────────────────────────────────
@@ -124,6 +137,17 @@ describe('SnippetsService', () => {
 
       await service.findPublic('hello', 'python', 'algo');
       expect(qb.andWhere).toHaveBeenCalledTimes(3);
+    });
+
+    it('paginates with skip and take and returns { data, total, page, limit }', async () => {
+      const snippet = makeSnippet({ isPublic: true });
+      const qb = makeQb(null, [snippet]);
+      mockRepo.createQueryBuilder.mockReturnValueOnce(qb);
+
+      const result = await service.findPublic(undefined, undefined, undefined, 3, 12);
+      expect(qb.skip).toHaveBeenCalledWith(24); // (3-1)*12
+      expect(qb.take).toHaveBeenCalledWith(12);
+      expect(result).toMatchObject({ data: [snippet], total: 1, page: 3, limit: 12 });
     });
   });
 
