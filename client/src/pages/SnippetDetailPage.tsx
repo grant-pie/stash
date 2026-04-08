@@ -71,10 +71,10 @@ export default function SnippetDetailPage() {
 
       <main className="mx-auto max-w-4xl px-4 py-8 space-y-6">
         <Link
-          to="/"
+          to="/my-snippets"
           className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-100 transition-colors"
         >
-          ← Back to dashboard
+          ← Back to my snippets.
         </Link>
 
         {/* Meta */}
