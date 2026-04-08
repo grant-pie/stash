@@ -25,8 +25,6 @@ import { AuditLog } from '../admin/audit-log.entity';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const DEFAULT_PASSWORD = 'Password1!';
-
 function makeDataSource() {
   return new DataSource({
     type: 'postgres',
@@ -41,6 +39,12 @@ function makeDataSource() {
 }
 
 async function main() {
+  const defaultPassword = process.env.SEED_USER_PASSWORD;
+  if (!defaultPassword) {
+    console.error('Error: SEED_USER_PASSWORD is not set in .env');
+    process.exit(1);
+  }
+
   const countArg = process.argv.find((a) => a.startsWith('--count='));
   const count = countArg ? parseInt(countArg.split('=')[1], 10) : 10;
 
@@ -53,7 +57,7 @@ async function main() {
   await ds.initialize();
 
   const repo = ds.getRepository(User);
-  const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
   let created = 0;
   let skipped = 0;
@@ -85,7 +89,7 @@ async function main() {
   }
 
   console.log(`✓ Seeded ${created} user(s) (${skipped} skipped — email or username already existed)`);
-  console.log(`  Default password for all seeded users: ${DEFAULT_PASSWORD}`);
+  console.log(`  Default password for all seeded users: ${defaultPassword}`);
 
   await ds.destroy();
 }
