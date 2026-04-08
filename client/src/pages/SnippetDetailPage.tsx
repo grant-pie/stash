@@ -87,6 +87,17 @@ export default function SnippetDetailPage() {
             <span className="rounded bg-surface-3 px-2 py-0.5 text-indigo-300 text-xs">
               {snippet.language}
             </span>
+            {snippet.isPublic ? (
+              <span className="flex items-center gap-1 rounded-full bg-green-950 px-2.5 py-0.5 text-xs font-medium text-green-400">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-green-400" />
+                Public
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 rounded-full bg-gray-800 px-2.5 py-0.5 text-xs font-medium text-gray-400">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-400" />
+                Private
+              </span>
+            )}
             <span>{date}</span>
           </div>
           {(Array.isArray(snippet.tags) ? snippet.tags : []).filter(Boolean).length > 0 && (

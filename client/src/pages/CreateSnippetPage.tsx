@@ -192,13 +192,9 @@ export default function CreateSnippetPage() {
 
           <div className="flex items-center justify-between rounded-lg border border-gray-800 bg-surface-2 px-4 py-3">
             <div>
-              <p className="text-sm font-medium text-gray-200">
-                {form.isPublic ? 'Public' : 'Private'}
-              </p>
+              <p className="text-sm font-medium text-gray-200">Public</p>
               <p className="text-xs text-gray-500">
-                {form.isPublic
-                  ? 'Anyone can discover this snippet in the feed.'
-                  : 'Only you can see this snippet.'}
+                Anyone can discover this snippet in the feed.
               </p>
             </div>
             <button
