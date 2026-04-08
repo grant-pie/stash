@@ -12,7 +12,7 @@ const LANGUAGES = [
 const EMPTY_FORM: CreateSnippetPayload = {
   title: '',
   description: '',
-  language: 'typescript',
+  language: '',
   content: '',
   tags: [],
   isPublic: false,
@@ -127,7 +127,9 @@ export default function CreateSnippetPage() {
                 className="input"
                 value={form.language}
                 onChange={(e) => set('language', e.target.value)}
+                required
               >
+                <option value="" disabled>Select a language</option>
                 {LANGUAGES.map((l) => (
                   <option key={l} value={l}>
                     {l}
