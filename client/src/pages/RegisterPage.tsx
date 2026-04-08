@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/axios';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -12,6 +13,9 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -29,7 +33,7 @@ export default function RegisterPage() {
       const msg = data?.message;
 
       if (data?.errorCode === 'EMAIL_NOT_VERIFIED') {
-        setVerificationSent(true);
+        setPendingVerificationEmail(email);
         return;
       }
 
@@ -43,6 +47,52 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleResend() {
+    if (!pendingVerificationEmail || resendLoading) return;
+    setResendLoading(true);
+    try {
+      await api.post('/auth/resend-verification', { email: pendingVerificationEmail });
+      setResendSent(true);
+    } finally {
+      setResendLoading(false);
+    }
+  }
+
+  if (pendingVerificationEmail) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-sm space-y-4 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-950 text-3xl">
+            ⚠️
+          </div>
+          <h1 className="text-xl font-bold">Please verify your account</h1>
+          <p className="text-sm text-gray-400">
+            <span className="text-gray-200">{pendingVerificationEmail}</span> is already
+            registered but hasn't been verified yet.
+            <br />
+            Check your inbox for the original link, or request a new one below.
+          </p>
+          {resendSent ? (
+            <p className="rounded bg-indigo-950 px-4 py-3 text-sm text-indigo-300">
+              Verification email sent — check your inbox.
+            </p>
+          ) : (
+            <button
+              onClick={handleResend}
+              disabled={resendLoading}
+              className="btn-primary w-full"
+            >
+              {resendLoading ? 'Sending…' : 'Resend verification email'}
+            </button>
+          )}
+          <Link to="/login" className="inline-block text-sm text-indigo-400 hover:underline">
+            Back to sign in
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   if (verificationSent) {
@@ -60,14 +110,7 @@ export default function RegisterPage() {
             Click the link in the email to activate your account.
           </p>
           <p className="text-xs text-gray-600">
-            Didn't receive it? Check your spam folder, or{' '}
-            <button
-              onClick={handleSubmit as any}
-              className="text-indigo-400 hover:underline"
-            >
-              resend the email
-            </button>
-            .
+            Didn't receive it? Check your spam folder or try registering again.
           </p>
           <Link to="/login" className="inline-block text-sm text-indigo-400 hover:underline">
             Back to sign in

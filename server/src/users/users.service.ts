@@ -14,7 +14,7 @@ export class UsersService {
     return this.usersRepo
       .createQueryBuilder('user')
       .addSelect('user.password')
-      .where('user.email = :identifier OR user.username = :identifier', { identifier })
+      .where('LOWER(user.email) = LOWER(:identifier) OR user.username = :identifier', { identifier })
       .getOne();
   }
 
@@ -26,7 +26,7 @@ export class UsersService {
     return this.usersRepo
       .createQueryBuilder('user')
       .addSelect('user.password')
-      .where('user.email = :email', { email })
+      .where('LOWER(user.email) = LOWER(:email)', { email })
       .getOne();
   }
 

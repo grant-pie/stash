@@ -26,6 +26,8 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    const email = dto.email.toLowerCase().trim();
+
     const existingUsername = await this.usersService.findByUsername(dto.username);
     if (existingUsername) {
       throw new ConflictException({
@@ -34,7 +36,7 @@ export class AuthService {
       });
     }
 
-    const existing = await this.usersService.findByEmail(dto.email);
+    const existing = await this.usersService.findByEmail(email);
 
     if (existing) {
       if (!existing.emailVerified) {
@@ -62,7 +64,7 @@ export class AuthService {
     const token = randomUUID();
 
     const user = await this.usersService.create({
-      email: dto.email,
+      email,
       username: dto.username,
       password: hashed,
       emailVerified: false,
@@ -122,13 +124,34 @@ export class AuthService {
     return { message: 'Email verified! You can now sign in.' };
   }
 
+  async resendVerification(email: string) {
+    // Always return the same message to prevent email enumeration
+    const genericResponse = {
+      message: "If that email has a pending account, we've sent a new verification link.",
+    };
+
+    const user = await this.usersService.findByEmail(email.toLowerCase().trim());
+    if (!user || user.emailVerified) return genericResponse;
+
+    const token = randomUUID();
+    await this.usersService.updateVerificationToken(user.id, token);
+
+    try {
+      await this.emailService.sendVerificationEmail(user.email, token);
+    } catch (err) {
+      this.logger.warn(`Failed to resend verification email to ${user.email}: ${err}`);
+    }
+
+    return genericResponse;
+  }
+
   async forgotPassword(dto: ForgotPasswordDto) {
     // Always return the same message to prevent email enumeration
     const genericResponse = {
       message: "If an account with that email exists, we've sent a password reset link.",
     };
 
-    const user = await this.usersService.findByEmail(dto.email);
+    const user = await this.usersService.findByEmail(dto.email.toLowerCase().trim());
     if (!user || !user.emailVerified) return genericResponse;
 
     const token = randomUUID();

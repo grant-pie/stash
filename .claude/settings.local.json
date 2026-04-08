@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm test:*)",
       "Bash(npx jest:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npx ts-node:*)"
     ]
   }
 }
