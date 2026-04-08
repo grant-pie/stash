@@ -38,7 +38,7 @@ export default function SnippetDetailPage() {
   async function handleDelete() {
     if (!confirm('Delete this snippet?')) return;
     await api.delete(`/snippets/${id}`);
-    navigate('/');
+    navigate('/my-snippets');
   }
 
   async function handleCopy() {
