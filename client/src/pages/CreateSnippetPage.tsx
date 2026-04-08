@@ -148,7 +148,7 @@ export default function CreateSnippetPage() {
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       addTag();
                     }
@@ -158,6 +158,7 @@ export default function CreateSnippetPage() {
                   Add
                 </button>
               </div>
+              <p className="text-xs text-gray-600">Separate tags with spaces or by pressing enter.</p>
               {(form.tags ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-1 pt-1">
                   {form.tags?.map((tag) => (
