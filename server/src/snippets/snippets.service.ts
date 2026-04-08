@@ -26,9 +26,10 @@ export class SnippetsService {
       .orderBy('snippet.createdAt', 'DESC');
 
     if (search) {
-      qb.andWhere('(snippet.title ILIKE :search OR snippet.description ILIKE :search)', {
-        search: `%${search}%`,
-      });
+      qb.andWhere(
+        '(snippet.title ILIKE :search OR snippet.description ILIKE :search OR snippet.tags LIKE :search)',
+        { search: `%${search}%` },
+      );
     }
     if (language) qb.andWhere('snippet.language = :language', { language });
     if (tag) qb.andWhere('snippet.tags LIKE :tag', { tag: `%${tag}%` });
@@ -54,9 +55,10 @@ export class SnippetsService {
       .orderBy('snippet.createdAt', 'DESC');
 
     if (search) {
-      qb.andWhere('(snippet.title ILIKE :search OR snippet.description ILIKE :search)', {
-        search: `%${search}%`,
-      });
+      qb.andWhere(
+        '(snippet.title ILIKE :search OR snippet.description ILIKE :search OR snippet.tags LIKE :search)',
+        { search: `%${search}%` },
+      );
     }
     if (language) qb.andWhere('snippet.language = :language', { language });
     if (tag) qb.andWhere('snippet.tags LIKE :tag', { tag: `%${tag}%` });

@@ -82,7 +82,7 @@ export default function DashboardPage() {
             <input
               type="search"
               className="input flex-1"
-              placeholder="Search snippets…"
+              placeholder="Search by title, description or tag…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

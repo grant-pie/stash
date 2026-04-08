@@ -73,13 +73,13 @@ describe('SnippetsService', () => {
       expect(qb.orderBy).toHaveBeenCalledWith('snippet.createdAt', 'DESC');
     });
 
-    it('applies ILIKE search when search is provided', async () => {
+    it('applies ILIKE search across title, description, and tags when search is provided', async () => {
       const qb = makeQb(null, []);
       mockRepo.createQueryBuilder.mockReturnValueOnce(qb);
 
       await service.findAll('owner-uuid', 'hello');
       expect(qb.andWhere).toHaveBeenCalledWith(
-        expect.stringContaining('ILIKE'),
+        expect.stringMatching(/title.*ILIKE.*description.*ILIKE.*tags.*LIKE/s),
         { search: '%hello%' },
       );
     });
