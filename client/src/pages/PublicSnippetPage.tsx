@@ -5,6 +5,7 @@ import 'highlight.js/styles/github-dark.css';
 import api from '@/lib/axios';
 import type { Snippet } from '@/types';
 import Navbar from '@/components/Navbar';
+import ErrorState from '@/components/ErrorState';
 
 export default function PublicSnippetPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,7 +20,13 @@ export default function PublicSnippetPage() {
     api
       .get<Snippet>(`/snippets/public/${id}`)
       .then(({ data }) => setSnippet(data))
-      .catch(() => setError('Snippet not found or is not public.'))
+      .catch((err: any) =>
+        setError(
+          err?.response
+            ? 'Snippet not found or is not public.'
+            : 'Could not reach the server. Check your connection and try again.',
+        ),
+      )
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -36,7 +43,14 @@ export default function PublicSnippetPage() {
 
   if (loading) return <p className="p-8 text-sm text-gray-500">Loading…</p>;
   if (error || !snippet)
-    return <p className="p-8 text-sm text-red-400">{error || 'Not found'}</p>;
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="p-8">
+          <ErrorState message={error || 'Snippet not found.'} />
+        </div>
+      </div>
+    );
 
   const date = new Date(snippet.createdAt).toLocaleDateString(undefined, {
     year: 'numeric', month: 'long', day: 'numeric',

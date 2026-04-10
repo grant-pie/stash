@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import api from '@/lib/axios';
 import type { CreateSnippetPayload } from '@/types';
 import Navbar from '@/components/Navbar';
+import ErrorState from '@/components/ErrorState';
 
 const LANGUAGES = [
   'typescript', 'javascript', 'python', 'rust', 'go',
@@ -26,6 +27,7 @@ export default function CreateSnippetPage() {
   const [form, setForm] = useState<CreateSnippetPayload>(EMPTY_FORM);
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
+  const [fetchError, setFetchError] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEditing);
 
@@ -42,7 +44,13 @@ export default function CreateSnippetPage() {
           isPublic: data.isPublic,
         });
       })
-      .catch(() => setError('Failed to load snippet.'))
+      .catch((err: any) =>
+        setFetchError(
+          err?.response
+            ? (err.response.data?.message ?? 'Snippet not found.')
+            : 'Could not reach the server. Check your connection and try again.',
+        ),
+      )
       .finally(() => setFetching(false));
   }, [id]);
 
@@ -81,8 +89,17 @@ export default function CreateSnippetPage() {
     }
   }
 
-  if (fetching) {
-    return <p className="p-8 text-sm text-gray-500">Loading…</p>;
+  if (fetching) return <p className="p-8 text-sm text-gray-500">Loading…</p>;
+
+  if (fetchError) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="p-8">
+          <ErrorState message={fetchError} />
+        </div>
+      </div>
+    );
   }
 
   return (

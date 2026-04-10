@@ -2,16 +2,23 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
-const NAV_LINKS = [
+const ADMIN_NAV_LINKS = [
   { to: '/admin', label: 'Dashboard', end: true },
   { to: '/admin/users', label: 'Users', end: false },
   { to: '/admin/snippets', label: 'Snippets', end: false },
   { to: '/admin/audit-logs', label: 'Audit Log', end: false },
 ];
 
+const MODERATOR_NAV_LINKS = [
+  { to: '/admin', label: 'Dashboard', end: true },
+  { to: '/admin/snippets', label: 'Snippets', end: false },
+];
+
 export default function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
+
+  const navLinks = isAdmin ? ADMIN_NAV_LINKS : MODERATOR_NAV_LINKS;
 
   function handleLogout() {
     logout();
@@ -27,14 +34,20 @@ export default function AdminLayout() {
           <Link to="/feed" className="text-base font-bold tracking-tight text-indigo-400">
             Stash
           </Link>
-          <span className="rounded bg-red-900/50 px-1.5 py-0.5 text-xs font-medium text-red-300 border border-red-800">
-            Admin
-          </span>
+          {isAdmin ? (
+            <span className="rounded bg-red-900/50 px-1.5 py-0.5 text-xs font-medium text-red-300 border border-red-800">
+              Admin
+            </span>
+          ) : (
+            <span className="rounded bg-purple-900/50 px-1.5 py-0.5 text-xs font-medium text-purple-300 border border-purple-800">
+              Mod
+            </span>
+          )}
         </div>
 
         {/* Nav */}
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
-          {NAV_LINKS.map(({ to, label, end }) => (
+          {navLinks.map(({ to, label, end }) => (
             <NavLink
               key={to}
               to={to}

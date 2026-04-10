@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '@/lib/axios';
 import type { AdminUser, UserRole } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
+import ErrorState from '@/components/ErrorState';
 
 const ROLES: UserRole[] = ['user', 'moderator', 'admin'];
 
@@ -45,8 +46,12 @@ export default function AdminUserDetailPage() {
         const res = await api.get<AdminUser>(`/admin/users/${id}`);
         setUser(res.data);
         setSelectedRole(res.data.role);
-      } catch {
-        setError('User not found.');
+      } catch (err: any) {
+        setError(
+          err?.response
+            ? (err.response.data?.message ?? 'User not found.')
+            : 'Could not reach the server. Check your connection and try again.',
+        );
       } finally {
         setLoading(false);
       }
@@ -113,11 +118,13 @@ export default function AdminUserDetailPage() {
 
   if (error || !user) {
     return (
-      <div className="p-6 space-y-3">
-        <p className="text-red-400 text-sm">{error || 'User not found.'}</p>
-        <Link to="/admin/users" className="text-indigo-400 text-sm hover:text-indigo-300">
-          Back to users
-        </Link>
+      <div className="p-6">
+        <ErrorState message={error || 'User not found.'} />
+        <div className="mt-2 text-center">
+          <Link to="/admin/users" className="text-indigo-400 text-sm hover:text-indigo-300">
+            Back to users
+          </Link>
+        </div>
       </div>
     );
   }

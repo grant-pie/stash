@@ -4,6 +4,7 @@ import api from '@/lib/axios';
 import type { Snippet, SnippetFilters, PaginatedResponse } from '@/types';
 import Navbar from '@/components/Navbar';
 import Pagination from '@/components/Pagination';
+import ErrorState from '@/components/ErrorState';
 import { useAuth } from '@/contexts/AuthContext';
 
 const LANGUAGES = [
@@ -25,11 +26,13 @@ export default function FeedPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filters, setFilters] = useState<SnippetFilters>({});
   const [search, setSearch] = useState('');
 
   const fetchSnippets = useCallback(async (f: SnippetFilters, p: number) => {
     setLoading(true);
+    setError('');
     try {
       const params = new URLSearchParams();
       if (f.search) params.set('search', f.search);
@@ -40,6 +43,12 @@ export default function FeedPage() {
       const { data } = await api.get<PaginatedResponse<Snippet>>(`/snippets/public?${params.toString()}`);
       setSnippets(data.data);
       setTotal(data.total);
+    } catch (err: any) {
+      setError(
+        err?.response
+          ? (err.response.data?.message ?? 'Failed to load snippets.')
+          : 'Could not reach the server. Check your connection and try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -107,6 +116,8 @@ export default function FeedPage() {
         {/* Results */}
         {loading ? (
           <p className="text-sm text-gray-500">Loading…</p>
+        ) : error ? (
+          <ErrorState message={error} onRetry={() => fetchSnippets(filters, page)} />
         ) : snippets.length === 0 ? (
           <div className="py-20 text-center">
             <p className="text-gray-400">No public snippets yet.</p>

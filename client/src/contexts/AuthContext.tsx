@@ -12,6 +12,7 @@ import api from '@/lib/axios';
 interface AuthContextValue {
   user: User | null;
   isAdmin: boolean;
+  isModerator: boolean;
   isLoading: boolean;
   login: (identifier: string, password: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<{ message: string }>;
@@ -74,9 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isAdmin = user?.role === 'admin';
+  const isModerator = user?.role === 'moderator';
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAdmin, isModerator, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

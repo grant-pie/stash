@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '@/lib/axios';
 import type { AdminUser, PaginatedResponse, UserRole } from '@/types';
 import Pagination from '@/components/Pagination';
+import ErrorState from '@/components/ErrorState';
 
 function RoleBadge({ role }: { role: UserRole }) {
   const styles: Record<UserRole, string> = {
@@ -20,6 +21,7 @@ function RoleBadge({ role }: { role: UserRole }) {
 export default function AdminUsersPage() {
   const [data, setData] = useState<PaginatedResponse<AdminUser> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [role, setRole] = useState('');
@@ -28,6 +30,7 @@ export default function AdminUsersPage() {
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
@@ -37,6 +40,12 @@ export default function AdminUsersPage() {
       params.set('limit', '20');
       const res = await api.get<PaginatedResponse<AdminUser>>(`/admin/users?${params}`);
       setData(res.data);
+    } catch (err: any) {
+      setError(
+        err?.response
+          ? (err.response.data?.message ?? 'Failed to load users.')
+          : 'Could not reach the server. Check your connection and try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -128,6 +137,12 @@ export default function AdminUsersPage() {
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-500">
                   Loading…
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-6">
+                  <ErrorState message={error} onRetry={fetchUsers} />
                 </td>
               </tr>
             ) : !data || data.data.length === 0 ? (

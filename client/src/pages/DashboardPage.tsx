@@ -5,6 +5,7 @@ import type { Snippet, SnippetFilters, PaginatedResponse } from '@/types';
 import SnippetCard from '@/components/SnippetCard';
 import Navbar from '@/components/Navbar';
 import Pagination from '@/components/Pagination';
+import ErrorState from '@/components/ErrorState';
 
 const LANGUAGES = [
   'TypeScript', 'JavaScript', 'Python', 'Rust', 'Go',
@@ -19,11 +20,13 @@ export default function DashboardPage() {
   const [page, setPage] = useState(1);
   const [allSnippets, setAllSnippets] = useState<Snippet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filters, setFilters] = useState<SnippetFilters>({});
   const [search, setSearch] = useState('');
 
   const fetchSnippets = useCallback(async (f: SnippetFilters, p: number) => {
     setLoading(true);
+    setError('');
     try {
       const params = new URLSearchParams();
       if (f.search) params.set('search', f.search);
@@ -36,6 +39,12 @@ export default function DashboardPage() {
       setTotal(data.total);
       // Keep an unfiltered copy just for deriving the tag list
       if (!f.search && !f.language && !f.tag) setAllSnippets(data.data);
+    } catch (err: any) {
+      setError(
+        err?.response
+          ? (err.response.data?.message ?? 'Failed to load snippets.')
+          : 'Could not reach the server. Check your connection and try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -146,6 +155,8 @@ export default function DashboardPage() {
         {/* Results */}
         {loading ? (
           <p className="text-sm text-gray-500">Loading…</p>
+        ) : error ? (
+          <ErrorState message={error} onRetry={() => fetchSnippets(filters, page)} />
         ) : snippets.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-20 text-center">
             <p className="text-gray-400">No snippets found</p>

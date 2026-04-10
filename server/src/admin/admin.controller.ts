@@ -29,14 +29,15 @@ import { AdminAuditLogsQueryDto } from './dto/admin-audit-logs-query.dto';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  // ─── Stats ────────────────────────────────────────────────────────────────
+  // ─── Stats (admin + moderator) ────────────────────────────────────────────
 
   @Get('stats')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   getStats() {
     return this.adminService.getStats();
   }
 
-  // ─── Users ────────────────────────────────────────────────────────────────
+  // ─── Users (admin only) ───────────────────────────────────────────────────
 
   @Get('users')
   getUsers(@Query() query: AdminUsersQueryDto) {
@@ -67,14 +68,16 @@ export class AdminController {
     return this.adminService.deleteUser(adminId, id, ip);
   }
 
-  // ─── Snippets ─────────────────────────────────────────────────────────────
+  // ─── Snippets (admin + moderator) ────────────────────────────────────────
 
   @Get('snippets')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   getSnippets(@Query() query: AdminSnippetsQueryDto) {
     return this.adminService.getSnippets(query);
   }
 
   @Patch('snippets/:id/visibility')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   updateSnippetVisibility(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('isPublic') isPublic: boolean,
@@ -87,13 +90,14 @@ export class AdminController {
 
   @Delete('snippets/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   deleteSnippet(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const adminId = (req.user as any).id;
     const ip = req.ip ?? 'unknown';
     return this.adminService.deleteSnippet(adminId, id, ip);
   }
 
-  // ─── Audit Logs ───────────────────────────────────────────────────────────
+  // ─── Audit Logs (admin only) ──────────────────────────────────────────────
 
   @Get('audit-logs')
   getAuditLogs(@Query() query: AdminAuditLogsQueryDto) {

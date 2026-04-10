@@ -2,7 +2,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminRoute() {
-  const { user, isAdmin, isLoading } = useAuth();
+  const { user, isAdmin, isModerator, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -13,7 +13,7 @@ export default function AdminRoute() {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to="/feed" replace />;
+  if (!isAdmin && !isModerator) return <Navigate to="/feed" replace />;
 
   return <Outlet />;
 }

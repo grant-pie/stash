@@ -1,16 +1,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/axios';
+import type { Snippet, PaginatedResponse } from '@/types';
+import Pagination from '@/components/Pagination';
+import ErrorState from '@/components/ErrorState';
 
 const LANGUAGES = [
   'typescript', 'javascript', 'python', 'rust', 'go',
   'css', 'html', 'sql', 'bash', 'other',
 ];
-import type { Snippet, PaginatedResponse } from '@/types';
-import Pagination from '@/components/Pagination';
 
 export default function AdminSnippetsPage() {
   const [data, setData] = useState<PaginatedResponse<Snippet & { user?: { username: string } }> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [language, setLanguage] = useState('');
@@ -19,6 +21,7 @@ export default function AdminSnippetsPage() {
 
   const fetchSnippets = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const params = new URLSearchParams();
       if (search) params.set('search', search);
@@ -30,6 +33,12 @@ export default function AdminSnippetsPage() {
         `/admin/snippets?${params}`,
       );
       setData(res.data);
+    } catch (err: any) {
+      setError(
+        err?.response
+          ? (err.response.data?.message ?? 'Failed to load snippets.')
+          : 'Could not reach the server. Check your connection and try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -146,6 +155,12 @@ export default function AdminSnippetsPage() {
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-500">
                   Loading…
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-6">
+                  <ErrorState message={error} onRetry={fetchSnippets} />
                 </td>
               </tr>
             ) : !data || data.data.length === 0 ? (

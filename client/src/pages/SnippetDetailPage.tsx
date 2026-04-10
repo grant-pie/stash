@@ -4,6 +4,7 @@ import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
 import api from '@/lib/axios';
 import type { Snippet } from '@/types';
+import ErrorState from '@/components/ErrorState';
 
 export default function SnippetDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,8 +21,12 @@ export default function SnippetDetailPage() {
       try {
         const { data } = await api.get<Snippet>(`/snippets/${id}`);
         setSnippet(data);
-      } catch {
-        setError('Snippet not found');
+      } catch (err: any) {
+        setError(
+          err?.response
+            ? (err.response.data?.message ?? 'Snippet not found.')
+            : 'Could not reach the server. Check your connection and try again.',
+        );
       } finally {
         setLoading(false);
       }
@@ -50,7 +55,14 @@ export default function SnippetDetailPage() {
 
   if (loading) return <p className="p-8 text-sm text-gray-500">Loading…</p>;
   if (error || !snippet)
-    return <p className="p-8 text-sm text-red-400">{error || 'Not found'}</p>;
+    return (
+      <div className="p-8">
+        <ErrorState
+          message={error || 'Snippet not found.'}
+          onRetry={error && !error.includes('not found') ? () => window.location.reload() : undefined}
+        />
+      </div>
+    );
 
   const date = new Date(snippet.createdAt).toLocaleDateString(undefined, {
     year: 'numeric',

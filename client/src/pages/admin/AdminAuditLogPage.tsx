@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/axios';
 import type { AuditLog, PaginatedResponse } from '@/types';
 import Pagination from '@/components/Pagination';
+import ErrorState from '@/components/ErrorState';
 
 const ACTIONS = [
   'USER_ROLE_CHANGED',
@@ -38,6 +39,7 @@ function MetadataCell({ metadata }: { metadata: Record<string, unknown> | null }
 export default function AdminAuditLogPage() {
   const [data, setData] = useState<PaginatedResponse<AuditLog> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [action, setAction] = useState('');
   const [targetType, setTargetType] = useState('');
   const [from, setFrom] = useState('');
@@ -46,6 +48,7 @@ export default function AdminAuditLogPage() {
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const params = new URLSearchParams();
       if (action) params.set('action', action);
@@ -56,6 +59,12 @@ export default function AdminAuditLogPage() {
       params.set('limit', '25');
       const res = await api.get<PaginatedResponse<AuditLog>>(`/admin/audit-logs?${params}`);
       setData(res.data);
+    } catch (err: any) {
+      setError(
+        err?.response
+          ? (err.response.data?.message ?? 'Failed to load audit logs.')
+          : 'Could not reach the server. Check your connection and try again.',
+      );
     } finally {
       setLoading(false);
     }
@@ -150,6 +159,12 @@ export default function AdminAuditLogPage() {
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
                   Loading…
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-6">
+                  <ErrorState message={error} onRetry={fetchLogs} />
                 </td>
               </tr>
             ) : !data || data.data.length === 0 ? (
