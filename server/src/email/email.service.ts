@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
+import { logEmailFailure } from './email-file-logger';
 
 @Injectable()
 export class EmailService {
@@ -44,6 +45,7 @@ export class EmailService {
 
     if (error) {
       this.logger.error(`Failed to send verification email to ${to}: ${error.message}`);
+      logEmailFailure('verification', to, error.message);
       throw new Error('Failed to send verification email');
     }
   }
@@ -82,6 +84,7 @@ export class EmailService {
 
     if (error) {
       this.logger.error(`Failed to send password reset email to ${to}: ${error.message}`);
+      logEmailFailure('password-reset', to, error.message);
       throw new Error('Failed to send password reset email');
     }
   }

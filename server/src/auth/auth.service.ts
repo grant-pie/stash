@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { UsersService } from '../users/users.service';
 import { EmailService } from '../email/email.service';
+import { logEmailFailure } from '../email/email-file-logger';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -48,6 +49,7 @@ export class AuthService {
           await this.emailService.sendVerificationEmail(existing.email, token);
         } catch (err) {
           this.logger.warn(`Failed to resend verification email to ${existing.email}: ${err}`);
+          logEmailFailure('resend-verification', existing.email, String(err));
         }
         throw new ConflictException({
           message: 'This email is registered but not yet verified. We\'ve resent the verification email — check your inbox.',
@@ -75,6 +77,7 @@ export class AuthService {
       await this.emailService.sendVerificationEmail(user.email, token);
     } catch (err) {
       this.logger.warn(`Failed to send verification email to ${user.email}: ${err}`);
+      logEmailFailure('verification', user.email, String(err));
     }
 
     return {
@@ -140,6 +143,7 @@ export class AuthService {
       await this.emailService.sendVerificationEmail(user.email, token);
     } catch (err) {
       this.logger.warn(`Failed to resend verification email to ${user.email}: ${err}`);
+      logEmailFailure('resend-verification', user.email, String(err));
     }
 
     return genericResponse;
@@ -162,6 +166,7 @@ export class AuthService {
       await this.emailService.sendPasswordResetEmail(user.email, token);
     } catch (err) {
       this.logger.warn(`Failed to send password reset email to ${user.email}: ${err}`);
+      logEmailFailure('password-reset', user.email, String(err));
     }
 
     return genericResponse;

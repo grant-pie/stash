@@ -67,7 +67,7 @@ export class AdminService {
     const qb = this.usersRepo.createQueryBuilder('u');
 
     if (search) {
-      qb.andWhere('(u.email ILIKE :search OR u.username ILIKE :search)', {
+      qb.andWhere('(u.email ILIKE :search OR u.username ILIKE :search OR CAST(u.id AS text) ILIKE :search)', {
         search: `%${search}%`,
       });
     }
@@ -164,7 +164,7 @@ export class AdminService {
       .leftJoinAndSelect('s.user', 'user');
 
     if (search) {
-      qb.andWhere('(s.title ILIKE :search OR s.description ILIKE :search)', {
+      qb.andWhere('(s.title ILIKE :search OR s.description ILIKE :search OR CAST(s.id AS text) ILIKE :search)', {
         search: `%${search}%`,
       });
     }

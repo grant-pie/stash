@@ -74,7 +74,7 @@ export default function AdminUsersPage() {
           <input
             type="search"
             className="input flex-1"
-            placeholder="Search by email or username…"
+            placeholder="Search by ID, email or username…"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
@@ -114,6 +114,7 @@ export default function AdminUsersPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-800 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">User</th>
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">Status</th>
@@ -125,19 +126,22 @@ export default function AdminUsersPage() {
           <tbody className="divide-y divide-gray-800">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
+                <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-500">
                   Loading…
                 </td>
               </tr>
             ) : !data || data.data.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-600 italic">
+                <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-600 italic">
                   No users found
                 </td>
               </tr>
             ) : (
               data.data.map((u) => (
                 <tr key={u.id} className="hover:bg-surface-2 transition-colors">
+                  <td className="px-4 py-3 text-xs text-gray-500 font-mono" title={u.id}>
+                    {u.id.slice(0, 8)}…
+                  </td>
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-200">{u.username}</div>
                     <div className="text-xs text-gray-500">{u.email}</div>

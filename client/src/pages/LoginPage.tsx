@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/axios';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -10,14 +11,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  // When the server tells us the email isn't verified, offer a direct link to register
-  // (which will resend the verification email)
-  const [showResendHint, setShowResendHint] = useState(false);
+
+  // Verify screen state — null means not active, string (possibly empty) means active
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSent, setResendSent] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
-    setShowResendHint(false);
     setLoading(true);
     try {
       await login(identifier, password);
@@ -27,7 +29,9 @@ export default function LoginPage() {
       const msg = data?.message;
 
       if (data?.errorCode === 'EMAIL_NOT_VERIFIED') {
-        setShowResendHint(true);
+        // Pre-fill with the identifier if it looks like an email
+        setPendingEmail(identifier.includes('@') ? identifier : '');
+        return;
       }
 
       if (Array.isArray(msg)) {
@@ -37,10 +41,68 @@ export default function LoginPage() {
       } else {
         setError('Could not connect to the server. Please try again.');
       }
-
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleResend() {
+    if (!pendingEmail || resendLoading) return;
+    setResendLoading(true);
+    try {
+      await api.post('/auth/resend-verification', { email: pendingEmail });
+      setResendSent(true);
+    } finally {
+      setResendLoading(false);
+    }
+  }
+
+  if (pendingEmail !== null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-sm space-y-4 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-950 text-3xl">
+            ⚠️
+          </div>
+          <h1 className="text-xl font-bold">Please verify your account</h1>
+          <p className="text-sm text-gray-400">
+            Your email address hasn't been verified yet.
+            <br />
+            Check your inbox for the original link, or request a new one below.
+          </p>
+          {!resendSent && (
+            <div className="space-y-2">
+              <input
+                type="email"
+                className="input w-full text-center"
+                placeholder="Your email address"
+                value={pendingEmail}
+                onChange={(e) => setPendingEmail(e.target.value)}
+              />
+            </div>
+          )}
+          {resendSent ? (
+            <p className="rounded bg-indigo-950 px-4 py-3 text-sm text-indigo-300">
+              Verification email sent — check your inbox.
+            </p>
+          ) : (
+            <button
+              onClick={handleResend}
+              disabled={resendLoading || !pendingEmail}
+              className="btn-primary w-full"
+            >
+              {resendLoading ? 'Sending…' : 'Resend verification email'}
+            </button>
+          )}
+          <button
+            onClick={() => { setPendingEmail(null); setResendSent(false); }}
+            className="inline-block text-sm text-indigo-400 hover:underline"
+          >
+            Back to sign in
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -53,20 +115,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="card space-y-4">
           {error && (
-            <div className="rounded bg-red-950 px-3 py-2 text-sm text-red-400 space-y-1">
-              <p>{error}</p>
-              {showResendHint && (
-                <p className="text-xs text-red-300">
-                  Need a new link?{' '}
-                  <Link
-                    to="/register"
-                    className="underline hover:text-white"
-                  >
-                    Resend verification email
-                  </Link>
-                </p>
-              )}
-            </div>
+            <p className="rounded bg-red-950 px-3 py-2 text-sm text-red-400">{error}</p>
           )}
 
           <div className="space-y-1">

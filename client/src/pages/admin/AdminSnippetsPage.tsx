@@ -79,7 +79,7 @@ export default function AdminSnippetsPage() {
           <input
             type="search"
             className="input flex-1"
-            placeholder="Search by title or description…"
+            placeholder="Search by ID, title or description…"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
           />
@@ -124,6 +124,7 @@ export default function AdminSnippetsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-800 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="px-4 py-3">ID</th>
               <th className="px-4 py-3">Title</th>
               <th className="px-4 py-3">Language</th>
               <th className="px-4 py-3">Author</th>
@@ -135,19 +136,22 @@ export default function AdminSnippetsPage() {
           <tbody className="divide-y divide-gray-800">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-500">
+                <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-500">
                   Loading…
                 </td>
               </tr>
             ) : !data || data.data.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-600 italic">
+                <td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-600 italic">
                   No snippets found
                 </td>
               </tr>
             ) : (
               data.data.map((s) => (
                 <tr key={s.id} className="hover:bg-surface-2 transition-colors">
+                  <td className="px-4 py-3 text-xs text-gray-500 font-mono" title={s.id}>
+                    {s.id.slice(0, 8)}…
+                  </td>
                   <td className="px-4 py-3 max-w-xs">
                     <span className="font-medium text-gray-200 truncate block">{s.title}</span>
                     {s.description && (
