@@ -1,5 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/axios';
+
+const LANGUAGES = [
+  'typescript', 'javascript', 'python', 'rust', 'go',
+  'css', 'html', 'sql', 'bash', 'other',
+];
 import type { Snippet, PaginatedResponse } from '@/types';
 import Pagination from '@/components/Pagination';
 
@@ -87,13 +92,16 @@ export default function AdminSnippetsPage() {
             Search
           </button>
         </form>
-        <input
-          type="text"
-          className="input w-36"
-          placeholder="Language"
+        <select
+          className="input w-auto"
           value={language}
           onChange={(e) => { setLanguage(e.target.value); setPage(1); }}
-        />
+        >
+          <option value="">All languages</option>
+          {LANGUAGES.map((l) => (
+            <option key={l} value={l}>{l}</option>
+          ))}
+        </select>
         <select
           className="input w-auto"
           value={visibility}
