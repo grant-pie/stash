@@ -129,7 +129,7 @@ describe('AdminUsersPage', () => {
     renderPage();
     await waitFor(() => screen.getByText('alice'));
 
-    await userEvent.type(screen.getByPlaceholderText(/search by email or username/i), 'bob');
+    await userEvent.type(screen.getByPlaceholderText(/search by id/i), 'bob');
     await userEvent.click(screen.getByRole('button', { name: /search/i }));
 
     await waitFor(() => {
@@ -166,5 +166,49 @@ describe('AdminUsersPage', () => {
     mockGet.mockReturnValue(new Promise(() => {}));
     renderPage();
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
+
+  it('renders a truncated ID for each user row', async () => {
+    renderPage();
+    await waitFor(() => {
+      // user-1 → first 8 chars = "user-1" (padded below for real UUIDs)
+      // Just confirm the ID column header exists
+      expect(screen.getByRole('columnheader', { name: /^id$/i })).toBeInTheDocument();
+    });
+  });
+
+  it('search placeholder includes "ID"', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('alice'));
+    expect(screen.getByPlaceholderText(/search by id/i)).toBeInTheDocument();
+  });
+
+  it('shows an error message when the API call fails with a server error', async () => {
+    mockGet.mockRejectedValue({ response: { data: { message: 'Internal server error' } } });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText('Internal server error')).toBeInTheDocument(),
+    );
+  });
+
+  it('shows a generic server-down message when there is no response', async () => {
+    mockGet.mockRejectedValue(new Error('Network Error'));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText(/could not reach the server/i)).toBeInTheDocument(),
+    );
+  });
+
+  it('clicking "Try again" after an error re-fetches', async () => {
+    mockGet
+      .mockRejectedValueOnce(new Error('Network Error'))
+      .mockResolvedValueOnce({ data: fakeResponse });
+
+    renderPage();
+    await waitFor(() => screen.getByRole('button', { name: /try again/i }));
+
+    await userEvent.click(screen.getByRole('button', { name: /try again/i }));
+
+    await waitFor(() => expect(screen.getByText('alice')).toBeInTheDocument());
   });
 });

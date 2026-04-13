@@ -167,6 +167,22 @@ describe('AdminService', () => {
       );
     });
 
+    it('includes CAST(u.id AS text) ILIKE in the search condition', async () => {
+      const qb = setupGetUsers();
+      await service.getUsers({ search: 'abc', page: 1, limit: 20 });
+      const [searchExpr] = qb.andWhere.mock.calls[0];
+      expect(searchExpr).toContain('CAST(u.id AS text) ILIKE :search');
+    });
+
+    it('does not apply search filter when search is omitted', async () => {
+      const qb = setupGetUsers();
+      await service.getUsers({ page: 1, limit: 20 });
+      const searchCalls = qb.andWhere.mock.calls.filter(([expr]: [string]) =>
+        expr.includes('ILIKE'),
+      );
+      expect(searchCalls).toHaveLength(0);
+    });
+
     it('applies role filter when provided', async () => {
       const qb = setupGetUsers();
       await service.getUsers({ role: UserRole.ADMIN, page: 1, limit: 20 });
@@ -378,6 +394,22 @@ describe('AdminService', () => {
         limit: 20,
       });
       expect(qb.andWhere).toHaveBeenCalledTimes(4);
+    });
+
+    it('includes CAST(s.id AS text) ILIKE in the search condition', async () => {
+      const qb = setupGetSnippets();
+      await service.getSnippets({ search: 'abc', page: 1, limit: 20 });
+      const [searchExpr] = qb.andWhere.mock.calls[0];
+      expect(searchExpr).toContain('CAST(s.id AS text) ILIKE :search');
+    });
+
+    it('does not apply search filter when search is omitted', async () => {
+      const qb = setupGetSnippets();
+      await service.getSnippets({ page: 1, limit: 20 });
+      const searchCalls = qb.andWhere.mock.calls.filter(([expr]: [string]) =>
+        expr.includes('ILIKE'),
+      );
+      expect(searchCalls).toHaveLength(0);
     });
 
     it('paginates and returns { data, total, page, limit }', async () => {

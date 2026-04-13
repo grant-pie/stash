@@ -8,6 +8,7 @@ const mockAuthService = {
   verifyEmail: jest.fn(),
   forgotPassword: jest.fn(),
   resetPassword: jest.fn(),
+  resendVerification: jest.fn(),
 };
 
 describe('AuthController', () => {
@@ -70,6 +71,16 @@ describe('AuthController', () => {
 
     const result = await controller.resetPassword(dto);
     expect(mockAuthService.resetPassword).toHaveBeenCalledWith(dto);
+    expect(result).toBe(expected);
+  });
+
+  it('resendVerification() passes email from body to authService.resendVerification', async () => {
+    const dto = { email: 'user@example.com' };
+    const expected = { message: "If that email has a pending account, we've sent a new verification link." };
+    mockAuthService.resendVerification.mockResolvedValueOnce(expected);
+
+    const result = await controller.resendVerification(dto);
+    expect(mockAuthService.resendVerification).toHaveBeenCalledWith(dto.email);
     expect(result).toBe(expected);
   });
 });

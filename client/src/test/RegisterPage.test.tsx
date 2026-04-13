@@ -5,10 +5,24 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RegisterPage from '@/pages/RegisterPage';
 import * as AuthContext from '@/contexts/AuthContext';
 
+vi.mock('@/lib/axios', () => ({
+  default: {
+    post: vi.fn(),
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() },
+    },
+  },
+}));
+
+import api from '@/lib/axios';
+const mockPost = vi.mocked(api.post);
+
 function mockAuth(overrides: Partial<ReturnType<typeof AuthContext.useAuth>> = {}) {
   vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
     user: null,
     isAdmin: false,
+    isModerator: false,
     isLoading: false,
     login: vi.fn(),
     register: vi.fn(),
@@ -110,7 +124,7 @@ describe('RegisterPage', () => {
     );
   });
 
-  it('treats EMAIL_NOT_VERIFIED error as success (shows inbox state)', async () => {
+  it('treats EMAIL_NOT_VERIFIED error by showing the "Please verify" screen', async () => {
     const err = { response: { data: { errorCode: 'EMAIL_NOT_VERIFIED', message: 'Not verified' } } };
     mockAuth({ register: vi.fn().mockRejectedValue(err) });
     renderRegister();
@@ -122,8 +136,80 @@ describe('RegisterPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /create account/i }));
 
     await waitFor(() =>
-      expect(screen.getByText(/check your inbox/i)).toBeInTheDocument(),
+      expect(screen.getByText(/please verify your account/i)).toBeInTheDocument(),
     );
+  });
+
+  describe('EMAIL_NOT_VERIFIED — verify screen', () => {
+    const notVerifiedErr = {
+      response: { data: { errorCode: 'EMAIL_NOT_VERIFIED', message: 'Not verified' } },
+    };
+
+    async function triggerVerifyScreen() {
+      mockAuth({ register: vi.fn().mockRejectedValue(notVerifiedErr) });
+      renderRegister();
+      await userEvent.type(screen.getByLabelText(/^email$/i), 'alice@example.com');
+      await userEvent.type(screen.getByLabelText(/^username$/i), 'alice');
+      await userEvent.type(screen.getByLabelText(/^password$/i), 'password1');
+      await userEvent.type(screen.getByLabelText(/confirm password/i), 'password1');
+      await userEvent.click(screen.getByRole('button', { name: /create account/i }));
+      await waitFor(() =>
+        expect(screen.getByText(/please verify your account/i)).toBeInTheDocument(),
+      );
+    }
+
+    beforeEach(() => mockPost.mockReset());
+
+    it('shows the submitted email address on the verify screen', async () => {
+      await triggerVerifyScreen();
+      expect(screen.getByText('alice@example.com')).toBeInTheDocument();
+    });
+
+    it('shows the "Resend verification email" button', async () => {
+      await triggerVerifyScreen();
+      expect(
+        screen.getByRole('button', { name: /resend verification email/i }),
+      ).toBeInTheDocument();
+    });
+
+    it('clicking resend POSTs to /auth/resend-verification with the email', async () => {
+      mockPost.mockResolvedValueOnce({ data: {} });
+      await triggerVerifyScreen();
+      await userEvent.click(screen.getByRole('button', { name: /resend verification email/i }));
+      await waitFor(() =>
+        expect(mockPost).toHaveBeenCalledWith('/auth/resend-verification', {
+          email: 'alice@example.com',
+        }),
+      );
+    });
+
+    it('shows a confirmation message after successful resend', async () => {
+      mockPost.mockResolvedValueOnce({ data: {} });
+      await triggerVerifyScreen();
+      await userEvent.click(screen.getByRole('button', { name: /resend verification email/i }));
+      await waitFor(() =>
+        expect(screen.getByText(/verification email sent/i)).toBeInTheDocument(),
+      );
+    });
+
+    it('hides the resend button after a successful resend', async () => {
+      mockPost.mockResolvedValueOnce({ data: {} });
+      await triggerVerifyScreen();
+      await userEvent.click(screen.getByRole('button', { name: /resend verification email/i }));
+      await waitFor(() =>
+        expect(
+          screen.queryByRole('button', { name: /resend verification email/i }),
+        ).not.toBeInTheDocument(),
+      );
+    });
+
+    it('"Back to sign in" link navigates to /login', async () => {
+      await triggerVerifyScreen();
+      expect(screen.getByRole('link', { name: /back to sign in/i })).toHaveAttribute(
+        'href',
+        '/login',
+      );
+    });
   });
 
   it('displays a server error message on other failures', async () => {

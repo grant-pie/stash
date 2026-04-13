@@ -17,6 +17,7 @@ function mockAuth(overrides: Partial<ReturnType<typeof AuthContext.useAuth>> = {
   vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
     user: { id: '1', email: 'admin@example.com', username: 'adminuser', role: 'admin' },
     isAdmin: true,
+    isModerator: false,
     isLoading: false,
     login: vi.fn(),
     register: vi.fn(),
@@ -104,5 +105,37 @@ describe('AdminLayout', () => {
   it('renders child page content via Outlet', () => {
     renderLayout();
     expect(screen.getByText('Page content')).toBeInTheDocument();
+  });
+
+  describe('when logged in as moderator', () => {
+    beforeEach(() => {
+      mockAuth({
+        user: { id: '2', email: 'mod@example.com', username: 'moduser', role: 'moderator' },
+        isAdmin: false,
+        isModerator: true,
+      });
+    });
+
+    it('renders the "Mod" badge instead of "Admin"', () => {
+      renderLayout();
+      expect(screen.getByText('Mod')).toBeInTheDocument();
+      expect(screen.queryByText('Admin')).not.toBeInTheDocument();
+    });
+
+    it('renders Dashboard and Snippets nav links', () => {
+      renderLayout();
+      expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Snippets' })).toBeInTheDocument();
+    });
+
+    it('does not render Users nav link', () => {
+      renderLayout();
+      expect(screen.queryByRole('link', { name: 'Users' })).not.toBeInTheDocument();
+    });
+
+    it('does not render Audit Log nav link', () => {
+      renderLayout();
+      expect(screen.queryByRole('link', { name: 'Audit Log' })).not.toBeInTheDocument();
+    });
   });
 });

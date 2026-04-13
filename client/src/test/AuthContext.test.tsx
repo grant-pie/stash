@@ -20,11 +20,12 @@ const mockPost = vi.mocked(api.post);
 
 // Simple consumer that exposes AuthContext via the DOM
 function AuthConsumer() {
-  const { user, isAdmin, login, logout, register } = useAuth();
+  const { user, isAdmin, isModerator, login, logout, register } = useAuth();
   return (
     <div>
       <span data-testid="username">{user?.username ?? 'none'}</span>
       <span data-testid="isAdmin">{String(isAdmin)}</span>
+      <span data-testid="isModerator">{String(isModerator)}</span>
       <button onClick={() => login('alice@example.com', 'password')}>Login</button>
       <button onClick={logout}>Logout</button>
       <button onClick={() => register('alice@example.com', 'alice', 'password')}>Register</button>
@@ -176,6 +177,58 @@ describe('AuthContext', () => {
 
       await waitFor(() =>
         expect(screen.getByTestId('isAdmin')).toHaveTextContent('true'),
+      );
+    });
+  });
+
+  describe('isModerator', () => {
+    it('is false when there is no user', async () => {
+      renderWithProvider();
+      await waitFor(() =>
+        expect(screen.getByTestId('isModerator')).toHaveTextContent('false'),
+      );
+    });
+
+    it('is false when the stored user has role "user"', async () => {
+      localStorage.setItem('user', JSON.stringify(fakeAuthResponse.user));
+      renderWithProvider();
+      await waitFor(() =>
+        expect(screen.getByTestId('isModerator')).toHaveTextContent('false'),
+      );
+    });
+
+    it('is false when the stored user has role "admin"', async () => {
+      localStorage.setItem(
+        'user',
+        JSON.stringify({ ...fakeAuthResponse.user, role: 'admin' }),
+      );
+      renderWithProvider();
+      await waitFor(() =>
+        expect(screen.getByTestId('isModerator')).toHaveTextContent('false'),
+      );
+    });
+
+    it('is true when the stored user has role "moderator"', async () => {
+      localStorage.setItem(
+        'user',
+        JSON.stringify({ ...fakeAuthResponse.user, role: 'moderator' }),
+      );
+      renderWithProvider();
+      await waitFor(() =>
+        expect(screen.getByTestId('isModerator')).toHaveTextContent('true'),
+      );
+    });
+
+    it('reflects moderator role from login response', async () => {
+      mockPost.mockResolvedValueOnce({
+        data: { ...fakeAuthResponse, user: { ...fakeAuthResponse.user, role: 'moderator' } },
+      });
+      renderWithProvider();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+      await waitFor(() =>
+        expect(screen.getByTestId('isModerator')).toHaveTextContent('true'),
       );
     });
   });

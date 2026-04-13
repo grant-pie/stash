@@ -84,8 +84,9 @@ describe('AdminSnippetsPage', () => {
 
   it('shows language badges', async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText('typescript')).toBeInTheDocument());
-    expect(screen.getByText('python')).toBeInTheDocument();
+    // Use getAllByText since 'python' also appears as a dropdown option
+    await waitFor(() => expect(screen.getAllByText('typescript').length).toBeGreaterThan(0));
+    expect(screen.getAllByText('python').length).toBeGreaterThan(0);
   });
 
   it('shows author usernames', async () => {
@@ -133,7 +134,7 @@ describe('AdminSnippetsPage', () => {
     renderPage();
     await waitFor(() => screen.getByText('Utility Function'));
 
-    await userEvent.type(screen.getByPlaceholderText(/search by title/i), 'config');
+    await userEvent.type(screen.getByPlaceholderText(/search by id/i), 'config');
     await userEvent.click(screen.getByRole('button', { name: /search/i }));
 
     await waitFor(() => {
@@ -191,5 +192,89 @@ describe('AdminSnippetsPage', () => {
     mockGet.mockReturnValue(new Promise(() => {}));
     renderPage();
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
+
+  it('renders an ID column header', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByRole('columnheader', { name: /^id$/i })).toBeInTheDocument(),
+    );
+  });
+
+  it('search placeholder includes "ID"', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('Utility Function'));
+    expect(screen.getByPlaceholderText(/search by id/i)).toBeInTheDocument();
+  });
+
+  it('language filter is a <select> dropdown, not a text input', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('Utility Function'));
+    // The language filter combobox should include language options
+    const selects = screen.getAllByRole('combobox');
+    const languageSelect = selects.find((s) =>
+      Array.from(s.querySelectorAll('option')).some((o) => o.textContent === 'typescript'),
+    );
+    expect(languageSelect).toBeDefined();
+  });
+
+  it('language dropdown contains expected language options', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('Utility Function'));
+    const selects = screen.getAllByRole('combobox');
+    const languageSelect = selects.find((s) =>
+      Array.from(s.querySelectorAll('option')).some((o) => o.textContent === 'typescript'),
+    )!;
+    const optionValues = Array.from(languageSelect.querySelectorAll('option')).map(
+      (o) => o.textContent,
+    );
+    expect(optionValues).toContain('typescript');
+    expect(optionValues).toContain('python');
+    expect(optionValues).toContain('javascript');
+  });
+
+  it('selecting a language filter re-fetches with the language param', async () => {
+    renderPage();
+    await waitFor(() => screen.getByText('Utility Function'));
+
+    const selects = screen.getAllByRole('combobox');
+    const languageSelect = selects.find((s) =>
+      Array.from(s.querySelectorAll('option')).some((o) => o.textContent === 'typescript'),
+    )!;
+    await userEvent.selectOptions(languageSelect, 'python');
+
+    await waitFor(() => {
+      const lastCall = mockGet.mock.calls[mockGet.mock.calls.length - 1][0] as string;
+      expect(lastCall).toContain('language=python');
+    });
+  });
+
+  it('shows an error message when the API call fails with a server error', async () => {
+    mockGet.mockRejectedValue({ response: { data: { message: 'Database unavailable' } } });
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText('Database unavailable')).toBeInTheDocument(),
+    );
+  });
+
+  it('shows a generic server-down message when there is no response', async () => {
+    mockGet.mockRejectedValue(new Error('Network Error'));
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getByText(/could not reach the server/i)).toBeInTheDocument(),
+    );
+  });
+
+  it('clicking "Try again" after an error re-fetches', async () => {
+    mockGet
+      .mockRejectedValueOnce(new Error('Network Error'))
+      .mockResolvedValueOnce({ data: fakeResponse });
+
+    renderPage();
+    await waitFor(() => screen.getByRole('button', { name: /try again/i }));
+
+    await userEvent.click(screen.getByRole('button', { name: /try again/i }));
+
+    await waitFor(() => expect(screen.getByText('Utility Function')).toBeInTheDocument());
   });
 });

@@ -52,4 +52,28 @@ describe('RolesGuard', () => {
     const ctx = makeContext(undefined);
     expect(guard.canActivate(ctx)).toBe(false);
   });
+
+  it('returns true when moderator role is in [ADMIN, MODERATOR] list', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValueOnce([UserRole.ADMIN, UserRole.MODERATOR]);
+    const ctx = makeContext({ role: UserRole.MODERATOR });
+    expect(guard.canActivate(ctx)).toBe(true);
+  });
+
+  it('returns false when moderator role is not in [ADMIN]-only list', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValueOnce([UserRole.ADMIN]);
+    const ctx = makeContext({ role: UserRole.MODERATOR });
+    expect(guard.canActivate(ctx)).toBe(false);
+  });
+
+  it('returns true when admin role is in [ADMIN, MODERATOR] list', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValueOnce([UserRole.ADMIN, UserRole.MODERATOR]);
+    const ctx = makeContext({ role: UserRole.ADMIN });
+    expect(guard.canActivate(ctx)).toBe(true);
+  });
+
+  it('returns false when a regular user tries to access a moderator/admin route', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValueOnce([UserRole.ADMIN, UserRole.MODERATOR]);
+    const ctx = makeContext({ role: UserRole.USER });
+    expect(guard.canActivate(ctx)).toBe(false);
+  });
 });

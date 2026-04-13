@@ -5,6 +5,12 @@ import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { EmailService } from '../email/email.service';
+import * as emailFileLogger from '../email/email-file-logger';
+
+// Mock the file logger so tests never touch the filesystem
+jest.mock('../email/email-file-logger', () => ({
+  logEmailFailure: jest.fn(),
+}));
 
 const mockUsersService = {
   findByUsername: jest.fn(),
@@ -149,6 +155,40 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('message');
     });
 
+    it('calls logEmailFailure when initial verification email send fails', async () => {
+      mockUsersService.findByUsername.mockResolvedValueOnce(null);
+      mockUsersService.findByEmail.mockResolvedValueOnce(null);
+      mockUsersService.create.mockResolvedValueOnce(makeUser({ email: dto.email }));
+      mockEmailService.sendVerificationEmail.mockRejectedValueOnce(new Error('SMTP down'));
+
+      await service.register(dto);
+
+      expect(emailFileLogger.logEmailFailure).toHaveBeenCalledWith(
+        'verification',
+        expect.any(String),
+        expect.stringContaining('SMTP down'),
+      );
+    });
+
+    it('calls logEmailFailure when resend during EMAIL_NOT_VERIFIED path fails', async () => {
+      mockUsersService.findByUsername.mockResolvedValueOnce(null);
+      mockUsersService.findByEmail.mockResolvedValueOnce(
+        makeUser({ emailVerified: false, email: dto.email }),
+      );
+      mockUsersService.updateVerificationToken.mockResolvedValueOnce(undefined);
+      mockEmailService.sendVerificationEmail.mockRejectedValueOnce(new Error('SMTP down'));
+
+      await expect(service.register(dto)).rejects.toMatchObject({
+        response: { errorCode: 'EMAIL_NOT_VERIFIED' },
+      });
+
+      expect(emailFileLogger.logEmailFailure).toHaveBeenCalledWith(
+        'resend-verification',
+        expect.any(String),
+        expect.stringContaining('SMTP down'),
+      );
+    });
+
     it('returns the expected success message', async () => {
       mockUsersService.findByUsername.mockResolvedValueOnce(null);
       mockUsersService.findByEmail.mockResolvedValueOnce(null);
@@ -282,6 +322,86 @@ describe('AuthService', () => {
 
       const result = await service.forgotPassword(dto);
       expect(result).toHaveProperty('message');
+    });
+
+    it('calls logEmailFailure when password reset email send fails', async () => {
+      mockUsersService.findByEmail.mockResolvedValueOnce(makeUser());
+      mockUsersService.setResetToken.mockResolvedValueOnce(undefined);
+      mockEmailService.sendPasswordResetEmail.mockRejectedValueOnce(new Error('SMTP down'));
+
+      await service.forgotPassword(dto);
+
+      expect(emailFileLogger.logEmailFailure).toHaveBeenCalledWith(
+        'password-reset',
+        expect.any(String),
+        expect.stringContaining('SMTP down'),
+      );
+    });
+  });
+
+  // ─── resendVerification ───────────────────────────────────────────────────
+
+  describe('resendVerification()', () => {
+    const email = 'test@example.com';
+
+    it('returns generic response without sending if user is not found', async () => {
+      mockUsersService.findByEmail.mockResolvedValueOnce(null);
+      const result = await service.resendVerification(email);
+      expect(result).toHaveProperty('message');
+      expect(mockEmailService.sendVerificationEmail).not.toHaveBeenCalled();
+    });
+
+    it('returns generic response without sending if user email is already verified', async () => {
+      mockUsersService.findByEmail.mockResolvedValueOnce(makeUser({ emailVerified: true }));
+      const result = await service.resendVerification(email);
+      expect(result).toHaveProperty('message');
+      expect(mockEmailService.sendVerificationEmail).not.toHaveBeenCalled();
+    });
+
+    it('updates the verification token and sends email for unverified user', async () => {
+      mockUsersService.findByEmail.mockResolvedValueOnce(makeUser({ emailVerified: false }));
+      mockUsersService.updateVerificationToken.mockResolvedValueOnce(undefined);
+      mockEmailService.sendVerificationEmail.mockResolvedValueOnce(undefined);
+
+      await service.resendVerification(email);
+
+      expect(mockUsersService.updateVerificationToken).toHaveBeenCalledWith(
+        'user-uuid',
+        expect.any(String),
+      );
+      expect(mockEmailService.sendVerificationEmail).toHaveBeenCalledWith(
+        'test@example.com',
+        expect.any(String),
+      );
+    });
+
+    it('returns the generic response even if the email send fails', async () => {
+      mockUsersService.findByEmail.mockResolvedValueOnce(makeUser({ emailVerified: false }));
+      mockUsersService.updateVerificationToken.mockResolvedValueOnce(undefined);
+      mockEmailService.sendVerificationEmail.mockRejectedValueOnce(new Error('SMTP down'));
+
+      const result = await service.resendVerification(email);
+      expect(result).toHaveProperty('message');
+    });
+
+    it('calls logEmailFailure when the resend email send fails', async () => {
+      mockUsersService.findByEmail.mockResolvedValueOnce(makeUser({ emailVerified: false }));
+      mockUsersService.updateVerificationToken.mockResolvedValueOnce(undefined);
+      mockEmailService.sendVerificationEmail.mockRejectedValueOnce(new Error('SMTP down'));
+
+      await service.resendVerification(email);
+
+      expect(emailFileLogger.logEmailFailure).toHaveBeenCalledWith(
+        'resend-verification',
+        'test@example.com',
+        expect.stringContaining('SMTP down'),
+      );
+    });
+
+    it('normalises the input email to lowercase before looking up the user', async () => {
+      mockUsersService.findByEmail.mockResolvedValueOnce(null);
+      await service.resendVerification('TEST@EXAMPLE.COM');
+      expect(mockUsersService.findByEmail).toHaveBeenCalledWith('test@example.com');
     });
   });
 

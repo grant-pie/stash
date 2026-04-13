@@ -8,6 +8,7 @@ function mockAuth(overrides: Partial<ReturnType<typeof AuthContext.useAuth>> = {
   vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
     user: null,
     isAdmin: false,
+    isModerator: false,
     isLoading: false,
     login: vi.fn(),
     register: vi.fn(),
@@ -61,11 +62,12 @@ describe('AdminRoute', () => {
     });
   });
 
-  describe('when authenticated but not admin', () => {
+  describe('when authenticated but not admin or moderator', () => {
     beforeEach(() =>
       mockAuth({
         user: { id: '1', email: 'a@b.com', username: 'alice', role: 'user' },
         isAdmin: false,
+        isModerator: false,
         isLoading: false,
       }),
     );
@@ -78,6 +80,28 @@ describe('AdminRoute', () => {
     it('does not render admin content', () => {
       renderWithRoutes();
       expect(screen.queryByText('Admin content')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('when authenticated as moderator', () => {
+    beforeEach(() =>
+      mockAuth({
+        user: { id: '3', email: 'mod@example.com', username: 'moduser', role: 'moderator' },
+        isAdmin: false,
+        isModerator: true,
+        isLoading: false,
+      }),
+    );
+
+    it('renders the admin content', () => {
+      renderWithRoutes();
+      expect(screen.getByText('Admin content')).toBeInTheDocument();
+    });
+
+    it('does not redirect to login or feed', () => {
+      renderWithRoutes();
+      expect(screen.queryByText('Login page')).not.toBeInTheDocument();
+      expect(screen.queryByText('Feed page')).not.toBeInTheDocument();
     });
   });
 

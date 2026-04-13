@@ -3,6 +3,19 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
 import type { AdminStats, PaginatedResponse, AuditLog } from '@/types';
+import * as AuthContext from '@/contexts/AuthContext';
+
+function mockAuth(isAdmin = true) {
+  vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
+    user: { id: '1', email: 'admin@example.com', username: 'adminuser', role: isAdmin ? 'admin' : 'moderator' },
+    isAdmin,
+    isModerator: !isAdmin,
+    isLoading: false,
+    login: vi.fn(),
+    register: vi.fn(),
+    logout: vi.fn(),
+  });
+}
 
 vi.mock('@/lib/axios', () => ({
   default: {
@@ -57,7 +70,10 @@ function renderPage() {
 }
 
 describe('AdminDashboardPage', () => {
-  beforeEach(() => mockGet.mockReset());
+  beforeEach(() => {
+    mockGet.mockReset();
+    mockAuth(true); // default to admin
+  });
 
   // Fix: resolve the deferred promise after asserting so React can finish
   // its async work before the next test's beforeEach runs.
@@ -191,6 +207,73 @@ describe('AdminDashboardPage', () => {
       renderPage();
 
       await waitFor(() => expect(screen.getByText('3d ago')).toBeInTheDocument());
+    });
+  });
+
+  describe('when logged in as moderator', () => {
+    beforeEach(() => {
+      mockAuth(false);
+      mockGet.mockResolvedValue({ data: fakeStats });
+    });
+
+    it('renders snippet stats (Total Snippets, Public Snippets)', async () => {
+      renderPage();
+      await waitFor(() => expect(screen.getByText('138')).toBeInTheDocument());
+      expect(screen.getByText('55')).toBeInTheDocument();
+    });
+
+    it('does not render user-only stats (Total Users, New This Week, Suspended)', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('138'));
+      expect(screen.queryByText('42')).not.toBeInTheDocument(); // Total Users
+      expect(screen.queryByText('7')).not.toBeInTheDocument();  // New This Week
+      expect(screen.queryByText('2')).not.toBeInTheDocument();  // Suspended
+    });
+
+    it('does not render the Recent Activity section', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('138'));
+      expect(screen.queryByText(/recent activity/i)).not.toBeInTheDocument();
+    });
+
+    it('does not render the "Manage Users" quick link', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('138'));
+      expect(screen.queryByRole('link', { name: /manage users/i })).not.toBeInTheDocument();
+    });
+
+    it('renders the "Moderate Snippets" quick link', async () => {
+      renderPage();
+      await waitFor(() =>
+        expect(screen.getByRole('link', { name: /moderate snippets/i })).toBeInTheDocument(),
+      );
+    });
+
+    it('only calls the stats endpoint (not audit-logs)', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('138'));
+      const auditCalls = mockGet.mock.calls.filter(([url]: [string]) =>
+        url.includes('audit-logs'),
+      );
+      expect(auditCalls).toHaveLength(0);
+    });
+  });
+
+  describe('error state', () => {
+    it('shows error message when the API call fails', async () => {
+      mockGet.mockRejectedValue({ response: { data: { message: 'Server error' } } });
+      renderPage();
+      await waitFor(() =>
+        expect(screen.getByText('Server error')).toBeInTheDocument(),
+      );
+    });
+
+    it('shows generic server-down message when there is no response', async () => {
+      mockGet.mockRejectedValue(new Error('Network Error'));
+      renderPage();
+      await waitFor(() =>
+        expect(screen.getByText(/could not reach the server/i)).toBeInTheDocument(),
+      );
     });
   });
 });
