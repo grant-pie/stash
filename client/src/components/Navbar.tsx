@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 
 export default function Navbar() {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isAdmin, isModerator, logout } = useAuth();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -41,7 +41,7 @@ export default function Navbar() {
                 My Snippets
               </NavLink>
             )}
-            {isAdmin && (
+            {(isAdmin || isModerator) && (
               <NavLink
                 to="/admin"
                 className={({ isActive }) =>
