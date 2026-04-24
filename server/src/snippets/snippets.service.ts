@@ -70,20 +70,30 @@ export class SnippetsService {
   }
 
   async findOne(id: string, userId: string): Promise<Snippet> {
-    const snippet = await this.snippetsRepo.findOneBy({ id });
+    let snippet: Snippet | null;
+    try {
+      snippet = await this.snippetsRepo.findOneBy({ id });
+    } catch {
+      throw new NotFoundException('Snippet not found');
+    }
     if (!snippet) throw new NotFoundException('Snippet not found');
     if (snippet.userId !== userId) throw new ForbiddenException();
     return snippet;
   }
 
   async findOnePublic(id: string): Promise<Snippet> {
-    const snippet = await this.snippetsRepo
-      .createQueryBuilder('snippet')
-      .leftJoin('snippet.user', 'user')
-      .addSelect(['user.id', 'user.username'])
-      .where('snippet.id = :id', { id })
-      .andWhere('snippet.isPublic = true')
-      .getOne();
+    let snippet: Snippet | null;
+    try {
+      snippet = await this.snippetsRepo
+        .createQueryBuilder('snippet')
+        .leftJoin('snippet.user', 'user')
+        .addSelect(['user.id', 'user.username'])
+        .where('snippet.id = :id', { id })
+        .andWhere('snippet.isPublic = true')
+        .getOne();
+    } catch {
+      throw new NotFoundException('Snippet not found');
+    }
 
     if (!snippet) throw new NotFoundException('Snippet not found');
     return snippet;
