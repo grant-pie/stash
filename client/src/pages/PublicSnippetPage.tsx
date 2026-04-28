@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
 import api from '@/lib/axios';
+import { getApiErrorMessage } from '@/lib/apiError';
 import type { Snippet } from '@/types';
 import Navbar from '@/components/Navbar';
 import ErrorState from '@/components/ErrorState';
@@ -20,13 +21,7 @@ export default function PublicSnippetPage() {
     api
       .get<Snippet>(`/snippets/public/${id}`)
       .then(({ data }) => setSnippet(data))
-      .catch((err: any) =>
-        setError(
-          err?.response
-            ? 'Snippet not found or is not public.'
-            : 'Could not reach the server. Check your connection and try again.',
-        ),
-      )
+      .catch((err: any) => setError(getApiErrorMessage(err, 'Snippet not found or is not public.')))
       .finally(() => setLoading(false));
   }, [id]);
 

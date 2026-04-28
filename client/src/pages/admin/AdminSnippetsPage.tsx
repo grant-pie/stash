@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/axios';
+import { getApiErrorMessage } from '@/lib/apiError';
 import type { Snippet, PaginatedResponse } from '@/types';
 import Pagination from '@/components/Pagination';
 import ErrorState from '@/components/ErrorState';
@@ -35,9 +36,7 @@ export default function AdminSnippetsPage() {
       setData(res.data);
     } catch (err: any) {
       setError(
-        err?.response
-          ? (err.response.data?.message ?? 'Failed to load snippets.')
-          : 'Could not reach the server. Check your connection and try again.',
+        getApiErrorMessage(err, 'Failed to load snippets.'),
       );
     } finally {
       setLoading(false);

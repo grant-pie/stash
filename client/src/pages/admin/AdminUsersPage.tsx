@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/axios';
+import { getApiErrorMessage } from '@/lib/apiError';
 import type { AdminUser, PaginatedResponse, UserRole } from '@/types';
 import Pagination from '@/components/Pagination';
 import ErrorState from '@/components/ErrorState';
@@ -41,11 +42,7 @@ export default function AdminUsersPage() {
       const res = await api.get<PaginatedResponse<AdminUser>>(`/admin/users?${params}`);
       setData(res.data);
     } catch (err: any) {
-      setError(
-        err?.response
-          ? (err.response.data?.message ?? 'Failed to load users.')
-          : 'Could not reach the server. Check your connection and try again.',
-      );
+      setError(getApiErrorMessage(err, 'Failed to load users.'));
     } finally {
       setLoading(false);
     }

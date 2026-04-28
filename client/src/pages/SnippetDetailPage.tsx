@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/github-dark.css';
 import api from '@/lib/axios';
+import { getApiErrorMessage } from '@/lib/apiError';
 import type { Snippet } from '@/types';
 import ErrorState from '@/components/ErrorState';
 
@@ -23,9 +24,7 @@ export default function SnippetDetailPage() {
         setSnippet(data);
       } catch (err: any) {
         setError(
-          err?.response
-            ? (err.response.data?.message ?? 'Snippet not found.')
-            : 'Could not reach the server. Check your connection and try again.',
+          getApiErrorMessage(err, 'Snippet not found.'),
         );
       } finally {
         setLoading(false);

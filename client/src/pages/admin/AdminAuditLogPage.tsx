@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/axios';
+import { getApiErrorMessage } from '@/lib/apiError';
 import type { AuditLog, PaginatedResponse } from '@/types';
 import Pagination from '@/components/Pagination';
 import ErrorState from '@/components/ErrorState';
@@ -61,9 +62,7 @@ export default function AdminAuditLogPage() {
       setData(res.data);
     } catch (err: any) {
       setError(
-        err?.response
-          ? (err.response.data?.message ?? 'Failed to load audit logs.')
-          : 'Could not reach the server. Check your connection and try again.',
+        getApiErrorMessage(err, 'Failed to load audit logs.'),
       );
     } finally {
       setLoading(false);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import api from '@/lib/axios';
+import { getApiErrorMessage } from '@/lib/apiError';
 import type { CreateSnippetPayload } from '@/types';
 import Navbar from '@/components/Navbar';
 import ErrorState from '@/components/ErrorState';
@@ -46,9 +47,7 @@ export default function CreateSnippetPage() {
       })
       .catch((err: any) =>
         setFetchError(
-          err?.response
-            ? (err.response.data?.message ?? 'Snippet not found.')
-            : 'Could not reach the server. Check your connection and try again.',
+          getApiErrorMessage(err, 'Snippet not found.'),
         ),
       )
       .finally(() => setFetching(false));

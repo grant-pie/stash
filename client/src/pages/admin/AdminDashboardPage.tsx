@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/axios';
+import { getApiErrorMessage } from '@/lib/apiError';
 import { useAuth } from '@/contexts/AuthContext';
 import type { AdminStats, AuditLog, PaginatedResponse } from '@/types';
 import ErrorState from '@/components/ErrorState';
@@ -61,9 +62,7 @@ export default function AdminDashboardPage() {
         if (logsRes) setRecentLogs(logsRes.data.data ?? []);
       } catch (err: any) {
         setError(
-          err?.response
-            ? (err.response.data?.message ?? 'Failed to load dashboard.')
-            : 'Could not reach the server. Check your connection and try again.',
+          getApiErrorMessage(err, 'Failed to load dashboard.'),
         );
       } finally {
         setLoading(false);

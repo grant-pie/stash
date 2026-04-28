@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '@/lib/axios';
+import { getApiErrorMessage } from '@/lib/apiError';
 import type { AdminUser, UserRole } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import ErrorState from '@/components/ErrorState';
@@ -48,9 +49,7 @@ export default function AdminUserDetailPage() {
         setSelectedRole(res.data.role);
       } catch (err: any) {
         setError(
-          err?.response
-            ? (err.response.data?.message ?? 'User not found.')
-            : 'Could not reach the server. Check your connection and try again.',
+          getApiErrorMessage(err, 'User not found.'),
         );
       } finally {
         setLoading(false);

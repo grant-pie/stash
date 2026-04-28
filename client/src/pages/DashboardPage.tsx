@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '@/lib/axios';
+import { getApiErrorMessage } from '@/lib/apiError';
 import type { Snippet, SnippetFilters, PaginatedResponse } from '@/types';
 import SnippetCard from '@/components/SnippetCard';
 import Navbar from '@/components/Navbar';
@@ -41,9 +42,7 @@ export default function DashboardPage() {
       if (!f.search && !f.language && !f.tag) setAllSnippets(data.data);
     } catch (err: any) {
       setError(
-        err?.response
-          ? (err.response.data?.message ?? 'Failed to load snippets.')
-          : 'Could not reach the server. Check your connection and try again.',
+        getApiErrorMessage(err, 'Failed to load snippets.'),
       );
     } finally {
       setLoading(false);
