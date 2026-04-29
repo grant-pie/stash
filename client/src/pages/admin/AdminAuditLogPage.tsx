@@ -119,6 +119,7 @@ export default function AdminAuditLogPage() {
           <label className="text-xs text-gray-500">From</label>
           <input
             type="date"
+            lang="en-GB"
             className="input w-auto"
             value={from}
             onChange={(e) => { setFrom(e.target.value); setPage(1); }}
@@ -128,6 +129,7 @@ export default function AdminAuditLogPage() {
           <label className="text-xs text-gray-500">To</label>
           <input
             type="date"
+            lang="en-GB"
             className="input w-auto"
             value={to}
             onChange={(e) => { setTo(e.target.value); setPage(1); }}
@@ -176,7 +178,7 @@ export default function AdminAuditLogPage() {
               data.data.map((log) => (
                 <tr key={log.id} className="hover:bg-surface-2 transition-colors align-top">
                   <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
-                    {new Date(log.createdAt).toLocaleString()}
+                    {new Date(log.createdAt).toLocaleString('en-GB')}
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-400">
                     {log.admin?.username ?? (
