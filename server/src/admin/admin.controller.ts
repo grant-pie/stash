@@ -76,6 +76,12 @@ export class AdminController {
     return this.adminService.getSnippets(query);
   }
 
+  @Get('snippets/:id')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  getSnippetById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.adminService.getSnippetById(id);
+  }
+
   @Patch('snippets/:id/visibility')
   @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   updateSnippetVisibility(

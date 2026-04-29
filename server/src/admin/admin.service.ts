@@ -180,6 +180,16 @@ export class AdminService {
     return { data, total, page, limit };
   }
 
+  async getSnippetById(id: string) {
+    const snippet = await this.snippetsRepo
+      .createQueryBuilder('s')
+      .leftJoinAndSelect('s.user', 'user')
+      .where('s.id = :id', { id })
+      .getOne();
+    if (!snippet) throw new NotFoundException('Snippet not found.');
+    return snippet;
+  }
+
   async updateSnippetVisibility(adminId: string, id: string, isPublic: boolean, ip: string) {
     const snippet = await this.snippetsRepo.findOneBy({ id });
     if (!snippet) throw new NotFoundException('Snippet not found.');

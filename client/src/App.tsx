@@ -17,6 +17,7 @@ import AdminDashboardPage from '@/pages/admin/AdminDashboardPage';
 import AdminUsersPage from '@/pages/admin/AdminUsersPage';
 import AdminUserDetailPage from '@/pages/admin/AdminUserDetailPage';
 import AdminSnippetsPage from '@/pages/admin/AdminSnippetsPage';
+import AdminSnippetDetailPage from '@/pages/admin/AdminSnippetDetailPage';
 import AdminAuditLogPage from '@/pages/admin/AdminAuditLogPage';
 
 export default function App() {
@@ -48,6 +49,7 @@ export default function App() {
               <Route path="/admin/users" element={<AdminUsersPage />} />
               <Route path="/admin/users/:id" element={<AdminUserDetailPage />} />
               <Route path="/admin/snippets" element={<AdminSnippetsPage />} />
+              <Route path="/admin/snippets/:id" element={<AdminSnippetDetailPage />} />
               <Route path="/admin/audit-logs" element={<AdminAuditLogPage />} />
             </Route>
           </Route>

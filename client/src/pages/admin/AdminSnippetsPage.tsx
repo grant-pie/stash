@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import api from '@/lib/axios';
 import { getApiErrorMessage } from '@/lib/apiError';
 import type { Snippet, PaginatedResponse } from '@/types';
@@ -205,12 +206,20 @@ export default function AdminSnippetsPage() {
                     {new Date(s.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => handleDelete(s.id, s.title)}
-                      className="text-xs text-red-400 hover:text-red-300"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex items-center justify-end gap-3">
+                      <Link
+                        to={`/admin/snippets/${s.id}`}
+                        className="text-xs text-indigo-400 hover:text-indigo-300"
+                      >
+                        View
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(s.id, s.title)}
+                        className="text-xs text-red-400 hover:text-red-300"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
